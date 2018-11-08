@@ -12,14 +12,22 @@ import java.security.interfaces.RSAPublicKey;
 import java.util.Base64;
 
 public class WSMain{
-    static String poolID = "us-east-1_1abyUmkI0";
+    static String poolID = "us-east-1_nxmnefgeS";
 
 
     public static void main(String[] args) throws Exception {
+        AuthenticationManager.init();
+        CognitoManager.init();
         Javalin app = Javalin.create().start(6969);
 
-
-        app.put("/test", ctx->{
+        app.before(r->{
+            System.out.println(r.formParamMap());
         });
+
+        //System.out.println(cog.newUser("696969", "hi@hi.com", true));
+
+        app.put("/keys/aes", AuthenticationManager::encryptNewAESKey);
+
+        app.put("/keys/test", AuthenticationManager::testEncryption);
     }
 }

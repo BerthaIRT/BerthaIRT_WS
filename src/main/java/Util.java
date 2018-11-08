@@ -1,5 +1,15 @@
-public class Util {
 
+import com.google.gson.JsonObject;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
+
+public class Util {
     //Used by BerthaNet to serialize base-64 encoded keys
     public static String asHex(byte buf[]) {
         StringBuilder strbuf = new StringBuilder(buf.length * 2);
