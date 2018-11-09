@@ -1,27 +1,24 @@
-import com.auth0.jwk.Jwk;
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.JWTVerifier;
-import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import io.javalin.Context;
 import io.javalin.Javalin;
-import com.auth0.jwk.UrlJwkProvider;
-
-import java.net.URL;
-import java.security.interfaces.RSAKey;
-import java.security.interfaces.RSAPublicKey;
-import java.util.Base64;
 
 public class WSMain{
+    static JsonParser jp;
+    static Gson gson;
 
     public static void main(String[] args) throws Exception {
+        jp = new JsonParser();
+        gson = new Gson();
         AuthenticationManager.init();
         CognitoManager.init();
         DBManager.init();
         Javalin app = Javalin.create().start(6969);
 
         app.before(r->{
-            System.out.println(r.formParamMap());
+            System.out.println(r.body());
         });
 
         //System.out.println(cog.newUser("696969", "hi@hi.com", true));
@@ -32,15 +29,31 @@ public class WSMain{
 
         app.put("/group/new", WSMain::createNewGroup);
 
-        app.put("/group/lookup", CognitoManager::getGroupID);
+        app.put("/group/lookup", DBManager::getGroupDetails);
+
+        app.put("/group/join", DBManager::registerNewStudent);
+
+        app.put("/report/new", WSMain::createNewReport);
     }
 
     public static void createNewGroup(Context ctx){
         //Will not be encrypted
-        String newAdmin = ctx.formParam("newAdmin");
-        String groupName = ctx.formParam("groupName");
+        JsonObject jay = jp.parse(ctx.body()).getAsJsonObject();
+        String newAdmin = jay.get("newAdmin").getAsString();
+        String groupName = jay.get("groupName").getAsString();
         String newGroupID = DBManager.createGroup(groupName);
         CognitoManager.newUser(newGroupID, newAdmin, true);
         ctx.result("OK");
+    }
+
+    public static void createNewReport(Context ctx){
+        DecodedJWT jwt = AuthenticationManager.verifyJWT(ctx);
+        String groupID = jwt.getClaim("custom:groupID").asString();
+        String decrypted = AuthenticationManager.decryptRequest(jwt, ctx.body());
+        Report r = gson.fromJson(decrypted, Report.class);
+        r.creationTimestamp = r.lastActionTimestamp = ((Long) System.currentTimeMillis()).toString();
+        r.reportId = DBManager.getNewReportID(groupID);
+        DBManager.storeNewReport(r, groupID);
+        ctx.result(AuthenticationManager.encryptResponse(jwt, gson.toJson(r)));
     }
 }

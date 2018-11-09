@@ -19,7 +19,6 @@ import java.security.*;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -126,24 +125,36 @@ public class AuthenticationManager {
         }
     }
 
-    public static String encryptToSend(DecodedJWT jwt, String response) throws BadPaddingException, IllegalBlockSizeException {
+    public static String encryptResponse(DecodedJWT jwt, String response){
         AESCiphers aCiphers = aesCipherMap.get(jwt.getClaim("sub").asString());
-        byte[] encrypted = aCiphers.encrypter.doFinal(response.getBytes());
-        String encoded = Util.asHex(encrypted);
-        return encoded;
-    }
-
-    public static void testEncryption(Context ctx){
-        DecodedJWT jwt = verifyJWT(ctx);
+        byte[] encrypted = new byte[0];
         try {
-            AESCiphers aCiphers = aesCipherMap.get(jwt.getClaim("sub").asString());
-            String decrypted = new String(aCiphers.decrypter.doFinal(Util.fromHexString(ctx.formParam("data"))));
-            if(decrypted.equals("bertha"))
-                ctx.result(encryptToSend(jwt, "success"));
+            encrypted = aCiphers.encrypter.doFinal(response.getBytes());
         } catch (IllegalBlockSizeException e) {
             e.printStackTrace();
         } catch (BadPaddingException e) {
             e.printStackTrace();
         }
+        String encoded = Util.asHex(encrypted);
+        return encoded;
+    }
+
+    public static String decryptRequest(DecodedJWT jwt, String body){
+        try {
+            AESCiphers aCiphers = aesCipherMap.get(jwt.getClaim("sub").asString());
+            return new String(aCiphers.decrypter.doFinal(Util.fromHexString(body)));
+        } catch (IllegalBlockSizeException e) {
+            e.printStackTrace();
+        } catch (BadPaddingException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static void testEncryption(Context ctx){
+        DecodedJWT jwt = verifyJWT(ctx);
+        String decrypted = decryptRequest(jwt, ctx.body());
+        if(decrypted.equals("bertha"))
+            ctx.result(encryptResponse(jwt, "success"));
     }
 }

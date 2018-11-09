@@ -8,6 +8,8 @@ import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
 import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
 import com.amazonaws.services.dynamodbv2.model.*;
+import com.google.gson.JsonObject;
+import io.javalin.Context;
 
 import java.util.Random;
 
@@ -27,7 +29,7 @@ public class DBManager {
         Table t = db.getTable("group");
         t.putItem(new Item().withPrimaryKey("id", newGroupCode)
                 .withString("name", newGroupName)
-                .withString("status", "Open")
+                .withString("groupstatus", "Open")
                 .withInt("base_studentID", 1000)
                 .withInt("base_reportID", 1000));
 
@@ -42,27 +44,54 @@ public class DBManager {
         return newGroupCode;
     }
 
-    public static String lookupGroupName(String groupID){
+    public static void getGroupDetails(Context ctx){
+        JsonObject jay = new JsonObject();
+        String groupID = ctx.body();
         Table t = db.getTable("group");
         GetItemSpec s = new GetItemSpec().withPrimaryKey("id", groupID);
-        return t.getItem(s).getString("name");
+        Item i = t.getItem(s);
+
+        if(i == null){
+            jay.addProperty("groupStatus", "NONE");
+            ctx.result(jay.toString());
+            return;
+        }
+
+        jay.addProperty("groupName", i.getString("name"));
+        jay.addProperty("groupStatus", i.getString("groupstatus"));
+        ctx.result(jay.toString());
     }
 
-    public static String lookupGroupStatus(String groupID){
+    public static void registerNewStudent(Context ctx){
+        String groupID = ctx.body();
         Table t = db.getTable("group");
         GetItemSpec s = new GetItemSpec().withPrimaryKey("id", groupID);
-        return t.getItem(s).getString("status");
-    }
-
-    public static String getNewStudentID(String groupID){
-        Table t = db.getTable("group");
-        GetItemSpec s = new GetItemSpec().withPrimaryKey("id", groupID);
-        int baseID = t.getItem(s).getInt("base_studentID");
+        Integer baseID = t.getItem(s).getInt("base_studentID");
 
         t.updateItem(new UpdateItemSpec().withPrimaryKey("id", groupID)
                 .withUpdateExpression("set base_studentID = :s")
                 .withValueMap(new ValueMap().withInt(":s", baseID+1)));
 
-        return "student-" + groupID + "-" + baseID;
+        String newUsername = "student-"+groupID+"-"+baseID;
+        CognitoManager.newUser(groupID, newUsername, false);
+        ctx.result(newUsername);
+    }
+
+    public static String getNewReportID(String groupID){
+        Table t = db.getTable("group");
+        GetItemSpec s = new GetItemSpec().withPrimaryKey("id", groupID);
+        Integer baseID = t.getItem(s).getInt("base_reportID");
+
+        t.updateItem(new UpdateItemSpec().withPrimaryKey("id", groupID)
+                .withUpdateExpression("set base_reportID = :s")
+                .withValueMap(new ValueMap().withInt(":s", baseID+1)));
+
+        return baseID.toString();
+    }
+
+    public static void storeNewReport(Report r, String groupID){
+        Table t = db.getTable("reports-" + groupID);
+        t.putItem(new Item().withPrimaryKey("id", r.reportId)
+                .withString("data", WSMain.gson.toJson(r)));
     }
 }

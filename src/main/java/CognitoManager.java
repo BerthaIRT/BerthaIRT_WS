@@ -31,13 +31,14 @@ public class CognitoManager {
         attribs.add(new AttributeType().withName("custom:groupID").withValue(groupCode));
         attribs.add(new AttributeType().withName("custom:rsaPublicKey").withValue("none"));
         String group;
+        String newPassword = "BeRThAfirsttimestudent";
         if(isAdmin){
             group = "Administrators";
             attribs.add(new AttributeType().withName("email_verified").withValue("true"));
             attribs.add(new AttributeType().withName("email").withValue(newUsername));
+            newPassword = String.format("%09d", new SecureRandom().nextInt(1000000000));
         }
         else group = "Students";
-        String newPassword = String.format("%09d", new SecureRandom().nextInt(1000000000));
         AdminCreateUserRequest req = new AdminCreateUserRequest()
                 .withUserPoolId(awsUserPool)
                 .withUsername(newUsername)
@@ -63,21 +64,5 @@ public class CognitoManager {
                 return a.getValue();
 
         return null;
-    }
-
-    public static void getGroupDetails(Context ctx){
-        String username = ctx.formParam("username");
-        List<AttributeType> attribs = idp.adminGetUser(new AdminGetUserRequest().withUsername(username).withUserPoolId(awsUserPool)).getUserAttributes();
-        String groupID = "";
-        for(AttributeType a : attribs)
-            if (a.getName().equals("custom:groupID"))
-                groupID = a.getValue();
-        String groupStatus = DBManager.lookupGroupStatus(groupID);
-        String groupName = DBManager.lookupGroupName(groupID);
-        JsonObject jay = new JsonObject();
-        jay.addProperty("id", groupID);
-        jay.addProperty("status", groupStatus);
-        jay.addProperty("name", groupName);
-        ctx.result(jay.toString());
     }
 }
