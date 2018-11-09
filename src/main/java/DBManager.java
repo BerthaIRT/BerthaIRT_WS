@@ -12,16 +12,16 @@ import com.amazonaws.services.dynamodbv2.model.*;
 import java.util.Random;
 
 public class DBManager {
-    DynamoDB db;
+    static DynamoDB db;
 
-    public DBManager(AWSCredentialsProvider acp){
+    public static void init(){
         AmazonDynamoDBClientBuilder bdb = AmazonDynamoDBClientBuilder.standard();
         bdb.withRegion(Regions.US_EAST_1);
-        bdb.withCredentials(acp);
+        bdb.withCredentials(AuthenticationManager.acp);
         db = new DynamoDB(bdb.build());
     }
 
-    public String createGroup(String newGroupName){
+    public static String createGroup(String newGroupName){
         String newGroupCode = ((Integer) new Random().nextInt(1000000)).toString();
 
         Table t = db.getTable("group");
@@ -42,19 +42,19 @@ public class DBManager {
         return newGroupCode;
     }
 
-    public String lookupGroupName(String groupID){
+    public static String lookupGroupName(String groupID){
         Table t = db.getTable("group");
         GetItemSpec s = new GetItemSpec().withPrimaryKey("id", groupID);
         return t.getItem(s).getString("name");
     }
 
-    public String lookupGroupStatus(String groupID){
+    public static String lookupGroupStatus(String groupID){
         Table t = db.getTable("group");
         GetItemSpec s = new GetItemSpec().withPrimaryKey("id", groupID);
         return t.getItem(s).getString("status");
     }
 
-    public String getNewStudentID(String groupID){
+    public static String getNewStudentID(String groupID){
         Table t = db.getTable("group");
         GetItemSpec s = new GetItemSpec().withPrimaryKey("id", groupID);
         int baseID = t.getItem(s).getInt("base_studentID");
