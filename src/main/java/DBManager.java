@@ -5,9 +5,11 @@ import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.Table;
 import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
+import com.amazonaws.services.dynamodbv2.document.spec.ScanSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
 import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
 import com.amazonaws.services.dynamodbv2.model.*;
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.google.gson.JsonObject;
 import io.javalin.Context;
 
@@ -93,5 +95,18 @@ public class DBManager {
         Table t = db.getTable("reports-" + groupID);
         t.putItem(new Item().withPrimaryKey("id", r.reportId)
                 .withString("data", WSMain.gson.toJson(r)));
+    }
+
+    public static void retrieveAll(Context ctx){
+        DecodedJWT jwt = AuthenticationManager.verifyJWT(ctx);
+        if(!AuthenticationManager.verifyAdminAccess(jwt)) ctx.status(401);
+
+        Table t = db.getTable("reports-" + jwt.getClaim("custom:groupID").asString());
+        ScanSpec q = new ScanSpec().withConsistentRead(true);
+        JsonObject response = new JsonObject();
+        for(Item i : t.scan(q))
+            response.addProperty(i.getString("id"), i.getString("data"));
+
+        ctx.result(AuthenticationManager.encryptResponse(jwt, response.toString()));
     }
 }

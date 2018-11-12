@@ -20,6 +20,7 @@ import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class AuthenticationManager {
@@ -44,12 +45,12 @@ public class AuthenticationManager {
         AWSCredentials creds = new AWSCredentials() {
             @Override
             public String getAWSAccessKeyId() {
-                return "AKIAIBHF4DER4NBPELGA";
+                return "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
             }
 
             @Override
             public String getAWSSecretKey() {
-                return "PLOYzaL6aUk5kdlfW21auSLPgF8XTH6JNXnReiGt";
+                return "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
             }
         };
         aesCipherMap = new HashMap<>();
@@ -66,6 +67,7 @@ public class AuthenticationManager {
             JWTVerifier j = JWT.require(al).acceptLeeway(3).build();
             DecodedJWT verified = j.verify(decoded.getToken());
             //System.out.println("DECODED JWT \n" + verified.toString());
+            //System.out.println(verified.getClaim("cognito:groups").asList(String.class));
             //for (String s : verified.getClaims().keySet()) System.out.println(s + ": " + verified.getClaim(s).asString());
             return verified;
         } catch (JwkException e) {
@@ -77,7 +79,6 @@ public class AuthenticationManager {
     public static void encryptNewAESKey(Context ctx){
         DecodedJWT jwt = verifyJWT(ctx);
         String hexPublicKey = CognitoManager.getRSAPublicKey(jwt.getClaim("cognito:username").asString());
-        System.out.println("THE PUBLIC KEY \n\n" + hexPublicKey);
         try {
             byte[] bytePublicKey = Util.fromHexString(hexPublicKey);
             KeyFactory kf = KeyFactory.getInstance("RSA");
@@ -99,7 +100,6 @@ public class AuthenticationManager {
 
             aCiphers.encrypter.init(Cipher.ENCRYPT_MODE, aesKey, initializationVectors);
             aCiphers.decrypter.init(Cipher.DECRYPT_MODE, aesKey, initializationVectors);
-            for(String s : jwt.getClaims().keySet()) System.out.println(s);
             String s = jwt.getClaim("sub").asString();
             aesCipherMap.put(s, aCiphers);
 
@@ -126,6 +126,7 @@ public class AuthenticationManager {
     }
 
     public static String encryptResponse(DecodedJWT jwt, String response){
+        System.out.println("\nDecrypted response:\n"+response);
         AESCiphers aCiphers = aesCipherMap.get(jwt.getClaim("sub").asString());
         byte[] encrypted = new byte[0];
         try {
@@ -142,7 +143,9 @@ public class AuthenticationManager {
     public static String decryptRequest(DecodedJWT jwt, String body){
         try {
             AESCiphers aCiphers = aesCipherMap.get(jwt.getClaim("sub").asString());
-            return new String(aCiphers.decrypter.doFinal(Util.fromHexString(body)));
+            String decrypted = new String(aCiphers.decrypter.doFinal(Util.fromHexString(body)));
+            System.out.println("\nDecrypted request:\n"+decrypted);
+            return decrypted;
         } catch (IllegalBlockSizeException e) {
             e.printStackTrace();
         } catch (BadPaddingException e) {
@@ -156,5 +159,10 @@ public class AuthenticationManager {
         String decrypted = decryptRequest(jwt, ctx.body());
         if(decrypted.equals("bertha"))
             ctx.result(encryptResponse(jwt, "success"));
+    }
+
+    public static boolean verifyAdminAccess(DecodedJWT jwt){
+        List<String> l = jwt.getClaim("cognito:groups").asList(String.class);
+        return(l.contains("Administrators"));
     }
 }

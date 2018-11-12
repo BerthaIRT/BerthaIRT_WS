@@ -18,7 +18,12 @@ public class WSMain{
         Javalin app = Javalin.create().start(6969);
 
         app.before(r->{
-            System.out.println(r.body());
+            System.out.println("----- NEW REQUEST: " + r.path() + "-----");
+            System.out.println("\nBody:\n"+r.body());
+        });
+
+        app.after(r->{
+            System.out.println("\nFinal response:\n"+r.resultString() + "\n");
         });
 
         //System.out.println(cog.newUser("696969", "hi@hi.com", true));
@@ -34,6 +39,8 @@ public class WSMain{
         app.put("/group/join", DBManager::registerNewStudent);
 
         app.put("/report/new", WSMain::createNewReport);
+
+        app.put("/report/retrieve/all", DBManager::retrieveAll);
     }
 
     public static void createNewGroup(Context ctx){
