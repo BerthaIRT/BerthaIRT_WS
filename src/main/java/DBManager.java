@@ -16,6 +16,7 @@ import io.javalin.Context;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
 public class DBManager {
     static DynamoDB db;
@@ -35,7 +36,8 @@ public class DBManager {
                 .withString("name", newGroupName)
                 .withString("groupstatus", "Open")
                 .withInt("base_studentID", 1000)
-                .withInt("base_reportID", 1000));
+                .withInt("base_reportID", 1000)
+                .withStringSet("admins", ""));
 
         CreateTableRequest req = new CreateTableRequest()
                 .withTableName("reports-" + newGroupCode)
@@ -64,6 +66,35 @@ public class DBManager {
         jay.addProperty("groupName", i.getString("name"));
         jay.addProperty("groupStatus", i.getString("groupstatus"));
         ctx.result(jay.toString());
+    }
+
+    public static void registerNewAdmin(String groupID, String adminName) {
+        Table t = db.getTable("group");
+        GetItemSpec s = new GetItemSpec().withPrimaryKey("id", groupID);
+        Set<String> i = t.getItem(s).getStringSet("admins");
+        i.add(adminName);
+        t.updateItem(new UpdateItemSpec().withPrimaryKey("id", groupID)
+                .withUpdateExpression("set admins = :ss")
+                .withValueMap(new ValueMap().withStringSet(":ss", i)));
+    }
+
+    public static void getAdmins(Context ctx) {
+        String groupID = ctx.body();
+        Table t = db.getTable("group");
+        GetItemSpec s = new GetItemSpec().withPrimaryKey("id", groupID);
+        List<String> admins = new ArrayList<>(t.getItem(s).getStringSet("admins"));
+        ctx.result(WSMain.gson.toJson(admins));
+
+    }
+
+    public static void removeAdmin(String groupID, String adminName) {
+        Table t = db.getTable("group");
+        GetItemSpec s = new GetItemSpec().withPrimaryKey("id", groupID);
+        Set<String> i = t.getItem(s).getStringSet("admins");
+        i.removeIf(v -> v.equals(adminName));
+        t.updateItem(new UpdateItemSpec().withPrimaryKey("id", groupID)
+                .withUpdateExpression("set admins = :ss")
+                .withValueMap(new ValueMap().withStringSet(":ss", i)));
     }
 
     public static void registerNewStudent(Context ctx){
