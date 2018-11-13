@@ -1,3 +1,4 @@
+import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
@@ -13,7 +14,10 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import io.javalin.Context;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.util.Set;
 
 public class DBManager {
     static DynamoDB db;
@@ -143,5 +147,65 @@ public class DBManager {
             response.addProperty(i.getString("id"), i.getString("data"));
 
         ctx.result(AuthenticationManager.encryptResponse(jwt, response.toString()));
+    }
+
+    public static void updateReport(Context ctx){
+        DecodedJWT jwt = AuthenticationManager.verifyJWT(ctx);
+        String groupID = jwt.getClaim("custom:groupID").asString();
+        Report rNew = WSMain.gson.fromJson(AuthenticationManager.decryptRequest(jwt, ctx.body()), Report.class);
+
+        Table t = db.getTable("reports-" + groupID);
+        GetItemSpec s = new GetItemSpec().withPrimaryKey("id", groupID);
+        Item i = t.getItem(s);
+        Report rOld = WSMain.gson.fromJson(i.getString("data"), Report.class);
+
+        if(rNew.status != rOld.status) rNew.logs.add(new Log("Changed status from " + rOld.status + " to " + rNew.status + ".", jwt));
+        if(rNew.assignedTo != rOld.assignedTo){
+            List<String> removed = new ArrayList<>(rOld.assignedTo);
+            List<String> added = new ArrayList<>(rNew.assignedTo);
+            for(String z : removed)
+                if(rNew.assignedTo.contains(z)) removed.remove(z);
+
+            for(String z : added)
+                if(rOld.assignedTo.contains(z)) added.remove(z);
+
+            if(added.size() > 0) rNew.logs.add(new Log("Added assignee: " + added + ".", jwt));
+            if(removed.size() > 0) rNew.logs.add(new Log("Removed assignee: " + removed + ".", jwt));
+        }
+
+        if(rNew.tags != rOld.tags){
+            List<String> removed = new ArrayList<>(rOld.tags);
+            List<String> added = new ArrayList<>(rNew.tags);
+            for(String z : removed)
+                if(rNew.tags.contains(z)) removed.remove(z);
+
+            for(String z : added)
+                if(rOld.tags.contains(z)) added.remove(z);
+
+            if(added.size() > 0) rNew.logs.add(new Log("Added tag: " + added + ".", jwt));
+            if(removed.size() > 0) rNew.logs.add(new Log("Removed tag: " + removed + ".", jwt));
+        }
+
+        if(rNew.categories != rOld.categories){
+            List<String> removed = new ArrayList<>(rOld.categories);
+            List<String> added = new ArrayList<>(rNew.categories);
+            for(String z : removed)
+                if(rNew.categories.contains(z)) removed.remove(z);
+
+            for(String z : added)
+                if(rOld.categories.contains(z)) added.remove(z);
+
+            if(added.size() > 0) rNew.logs.add(new Log("Added category: " + added + ".", jwt));
+            if(removed.size() > 0) rNew.logs.add(new Log("Removed category: " + removed + ".", jwt));
+        }
+
+        if(rNew.notes != rOld.notes)
+            rNew.logs.add(new Log("Added note " + ((Integer) (rNew.notes.size()+1)).toString() + ".", jwt));
+
+        String jay = WSMain.gson.toJson(rNew);
+        t.updateItem(new UpdateItemSpec().withPrimaryKey("id", groupID)
+                .withUpdateExpression("set data = :s")
+                .withValueMap(new ValueMap().withString(":s", jay)));
+        ctx.result(AuthenticationManager.encryptResponse(jwt, jay));
     }
 }

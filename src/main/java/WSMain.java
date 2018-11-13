@@ -62,7 +62,7 @@ public class WSMain{
         String groupID = jwt.getClaim("custom:groupID").asString();
         String decrypted = AuthenticationManager.decryptRequest(jwt, ctx.body());
         Report r = gson.fromJson(decrypted, Report.class);
-        r.creationTimestamp = r.lastActionTimestamp = System.currentTimeMillis();
+        r.creationTimestamp = System.currentTimeMillis();
         r.reportId = DBManager.getNewReportID(groupID);
         DBManager.storeNewReport(r, groupID);
         ctx.result(AuthenticationManager.encryptResponse(jwt, gson.toJson(r)));

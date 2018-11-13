@@ -1,3 +1,5 @@
+import com.auth0.jwt.interfaces.DecodedJWT;
+
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -7,7 +9,6 @@ import java.util.Locale;
 public class Report {
     public String reportId = "";
     public long creationTimestamp = new Long(0);
-    public long lastActionTimestamp = new Long(0);
     public long incidentTimeStamp = new Long(0);
     public String status = "";
     public String location = "";
@@ -20,19 +21,23 @@ public class Report {
     public List<Message> messages = new ArrayList<>();
     public List<Log> logs = new ArrayList<>();
     public List<Log> notes = new ArrayList<>();
+}
 
-    public class Message {
-        public String text; // message body
-        private String senderId; // data of the user that sent this message
-        public String date;
-        public String time;
-        public boolean sendingError;
-        public boolean lastSent;
-    }
+class Message {
+    public String text;
+    public String sender;
+    public long timestamp;
+    public boolean sendingError;
+    public boolean lastSent;
+}
 
-    public class Log {
-        public long timestamp;
-        public String text;
-        public String sender;
+class Log {
+    public long timestamp;
+    public String text;
+    public String sender;
+    public Log(String text, DecodedJWT jwt){
+        this.timestamp = System.currentTimeMillis();
+        this.text = text;
+        this.sender = jwt.getClaim("name").asString();
     }
 }
