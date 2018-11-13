@@ -45,12 +45,12 @@ public class AuthenticationManager {
         AWSCredentials creds = new AWSCredentials() {
             @Override
             public String getAWSAccessKeyId() {
-                return "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
+                return "";
             }
 
             @Override
             public String getAWSSecretKey() {
-                return "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
+                return "";
             }
         };
         aesCipherMap = new HashMap<>();
