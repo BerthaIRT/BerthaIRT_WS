@@ -9,6 +9,7 @@ import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
 import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
 import com.amazonaws.services.dynamodbv2.model.*;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import io.javalin.Context;
 
@@ -75,12 +76,17 @@ public class DBManager {
     }
 
     public static void getAdmins(Context ctx) {
-        String groupID = ctx.body();
+        DecodedJWT jwt = AuthenticationManager.verifyJWT(ctx);
+        if(!AuthenticationManager.verifyAdminAccess(jwt)) ctx.status(401);
+        String groupID = jwt.getClaim("custom:groupID").asString();
+
         Table t = db.getTable("group");
         GetItemSpec s = new GetItemSpec().withPrimaryKey("id", groupID);
-        List<String> admins = new ArrayList<>(t.getItem(s).getStringSet("admins"));
-        ctx.result(WSMain.gson.toJson(admins));
+        JsonArray response = new JsonArray();
+        for(String i : t.getItem(s).getStringSet("admins"))
+            response.add(i);
 
+        ctx.result(AuthenticationManager.encryptResponse(jwt, response.toString()));
     }
 
     public static void removeAdmin(String groupID, String adminName) {
