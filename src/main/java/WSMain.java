@@ -36,11 +36,11 @@ public class WSMain{
 
         app.put("/group/join/student", DBManager::registerNewStudent);
 
+        app.put("/group/join/admin", WSMain::adminJoinGroup);
+
         app.put("/report/new", WSMain::createNewReport);
 
         app.put("/report/retrieve/all", DBManager::retrieveAll);
-
-        app.put("/group/join/admin", WSMain::adminJoinGroup);
 
         app.put("/group/remove/admin", WSMain::adminRemoveGroup);
 

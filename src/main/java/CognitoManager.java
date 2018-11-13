@@ -46,7 +46,12 @@ public class CognitoManager {
                 .withTemporaryPassword(newPassword)
                 .withUserAttributes(attribs);
         if(isAdmin) req=req.withDesiredDeliveryMediums(DeliveryMediumType.EMAIL);
-        idp.adminCreateUser(req);
+        try{
+            idp.adminCreateUser(req);
+        }
+        catch(AWSCognitoIdentityProviderException e){
+            return("EXISTING USER");
+        }
         idp.adminAddUserToGroup(new AdminAddUserToGroupRequest()
                 .withUserPoolId(awsUserPool)
                 .withUsername(newUsername)

@@ -1,10 +1,7 @@
 import com.auth0.jwt.interfaces.DecodedJWT;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 
 public class Report {
     public String reportId = "";
@@ -31,13 +28,3 @@ class Message {
     public boolean lastSent;
 }
 
-class Log {
-    public long timestamp;
-    public String text;
-    public String sender;
-    public Log(String text, DecodedJWT jwt){
-        this.timestamp = System.currentTimeMillis();
-        this.text = text;
-        this.sender = jwt.getClaim("name").asString();
-    }
-}

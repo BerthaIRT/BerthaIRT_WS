@@ -3,6 +3,7 @@ import com.amazonaws.regions.Regions;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Item;
+import com.amazonaws.services.dynamodbv2.document.PrimaryKey;
 import com.amazonaws.services.dynamodbv2.document.Table;
 import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.ScanSpec;
@@ -38,7 +39,7 @@ public class DBManager {
                 .withString("groupstatus", "Open")
                 .withInt("base_studentID", 1000)
                 .withInt("base_reportID", 1000)
-                .withStringSet("admins", ""));
+                .withList("admins", new ArrayList<>()));
 
         CreateTableRequest req = new CreateTableRequest()
                 .withTableName("reports-" + newGroupCode)
@@ -72,11 +73,9 @@ public class DBManager {
     public static void registerNewAdmin(String groupID, String adminName) {
         Table t = db.getTable("group");
         GetItemSpec s = new GetItemSpec().withPrimaryKey("id", groupID);
-        Set<String> i = t.getItem(s).getStringSet("admins");
-        i.add(adminName);
         t.updateItem(new UpdateItemSpec().withPrimaryKey("id", groupID)
-                .withUpdateExpression("set admins = :ss")
-                .withValueMap(new ValueMap().withStringSet(":ss", i)));
+                .withUpdateExpression("list_append(admins, :ss")
+                .withValueMap(new ValueMap().withString(":ss", adminName)));
     }
 
     public static void getAdmins(Context ctx) {
@@ -87,7 +86,8 @@ public class DBManager {
         Table t = db.getTable("group");
         GetItemSpec s = new GetItemSpec().withPrimaryKey("id", groupID);
         JsonArray response = new JsonArray();
-        for(String i : t.getItem(s).getStringSet("admins"))
+        List<Object> obList = t.getItem(s).getList("admins");
+        for(String i : obList.toArray(new String[obList.size()]))
             response.add(i);
 
         ctx.result(AuthenticationManager.encryptResponse(jwt, response.toString()));
@@ -207,5 +207,38 @@ public class DBManager {
                 .withUpdateExpression("set data = :s")
                 .withValueMap(new ValueMap().withString(":s", jay)));
         ctx.result(AuthenticationManager.encryptResponse(jwt, jay));
+    }
+
+    public static void addGroupLog(DecodedJWT jwt, String event){
+        String groupID = jwt.getClaim("custom:groupID").asString();
+        Log l = new Log(event, jwt);
+        Table t = db.getTable("group");
+        t.updateItem(new UpdateItemSpec().withPrimaryKey("id", groupID)
+                .withUpdateExpression("list_append(admins, :ss")
+                .withValueMap(new ValueMap().withString(":ss", WSMain.gson.toJson(l))));
+    }
+
+    public static void getGroupLogs(Context ctx){
+        DecodedJWT jwt = AuthenticationManager.verifyJWT(ctx);
+        if(!AuthenticationManager.verifyAdminAccess(jwt)) ctx.status(401);
+        String groupID = jwt.getClaim("custom:groupID").asString();
+        Table t = db.getTable("group");
+        String logs = t.getItem(new PrimaryKey().addComponent("id", groupID)).toString();
+        ctx.result(AuthenticationManager.encryptResponse(jwt, logs));
+    }
+
+    public static void addAlert(String groupID, Alert a, List<String> admins){
+        Table t = db.getTable("group");
+        if(admins == null){
+            GetItemSpec s = new GetItemSpec().withPrimaryKey("id", groupID);
+            admins = new ArrayList<>();
+            List<Object> obList = t.getItem(s).getList("admins");
+            for(String i : obList.toArray(new String[obList.size()]))
+                admins.add(i);
+        }
+        a.unseenBy = admins;
+        t.updateItem(new UpdateItemSpec().withPrimaryKey("id", groupID)
+                .withUpdateExpression("list_append(admins, :ss")
+                .withValueMap(new ValueMap().withString(":ss", WSMain.gson.toJson(admins))));
     }
 }
