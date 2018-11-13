@@ -26,9 +26,9 @@ public class CognitoManager {
                 .withCredentials(AuthenticationManager.acp).withRegion(Regions.US_EAST_1).build();
     }
 
-    public static String newUser(String groupCode, String newUsername, boolean isAdmin){
+    public static String newUser(String groupID, String newUsername, boolean isAdmin){
         List<AttributeType> attribs = new ArrayList<>();
-        attribs.add(new AttributeType().withName("custom:groupID").withValue(groupCode));
+        attribs.add(new AttributeType().withName("custom:groupID").withValue(groupID));
         attribs.add(new AttributeType().withName("custom:rsaPublicKey").withValue("none"));
         String group;
         String newPassword = "BeRThAfirsttimestudent";
@@ -37,6 +37,7 @@ public class CognitoManager {
             attribs.add(new AttributeType().withName("email_verified").withValue("true"));
             attribs.add(new AttributeType().withName("email").withValue(newUsername));
             newPassword = String.format("%09d", new SecureRandom().nextInt(1000000000));
+            DBManager.registerNewAdmin(groupID,newUsername);
         }
         else group = "Students";
         AdminCreateUserRequest req = new AdminCreateUserRequest()

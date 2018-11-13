@@ -15,7 +15,7 @@ public class WSMain{
         AuthenticationManager.init();
         CognitoManager.init();
         DBManager.init();
-        Javalin app = Javalin.create().start(6969);
+        Javalin app = Javalin.create().start(80);
 
         app.before(r->{
             System.out.println("----- NEW REQUEST: " + r.path() + "-----");
@@ -26,8 +26,6 @@ public class WSMain{
             System.out.println("\nFinal response:\n"+r.resultString() + "\n");
         });
 
-        //System.out.println(cog.newUser("696969", "hi@hi.com", true));
-
         app.put("/keys/aes", AuthenticationManager::encryptNewAESKey);
 
         app.put("/keys/test", AuthenticationManager::testEncryption);
@@ -36,11 +34,17 @@ public class WSMain{
 
         app.put("/group/lookup", DBManager::getGroupDetails);
 
-        app.put("/group/join", DBManager::registerNewStudent);
+        app.put("/group/join/student", DBManager::registerNewStudent);
 
         app.put("/report/new", WSMain::createNewReport);
 
         app.put("/report/retrieve/all", DBManager::retrieveAll);
+
+        app.put("/group/join/admin", WSMain::adminJoinGroup);
+
+        app.put("/group/remove/admin", WSMain::adminRemoveGroup);
+
+        app.put("/group/get/admins", DBManager::getAdmins);
     }
 
     public static void createNewGroup(Context ctx){
@@ -58,9 +62,23 @@ public class WSMain{
         String groupID = jwt.getClaim("custom:groupID").asString();
         String decrypted = AuthenticationManager.decryptRequest(jwt, ctx.body());
         Report r = gson.fromJson(decrypted, Report.class);
-        r.creationTimestamp = r.lastActionTimestamp = ((Long) System.currentTimeMillis()).toString();
+        r.creationTimestamp = r.lastActionTimestamp = System.currentTimeMillis();
         r.reportId = DBManager.getNewReportID(groupID);
         DBManager.storeNewReport(r, groupID);
         ctx.result(AuthenticationManager.encryptResponse(jwt, gson.toJson(r)));
+    }
+
+    public static void adminJoinGroup(Context ctx) {
+        DecodedJWT jwt = AuthenticationManager.verifyJWT(ctx);
+        String groupID = jwt.getClaim("custom:groupID").asString();
+        String decrypted = AuthenticationManager.decryptRequest(jwt, ctx.body());
+        CognitoManager.newUser(groupID,decrypted, true);
+    }
+
+    public static void adminRemoveGroup(Context ctx) {
+        DecodedJWT jwt = AuthenticationManager.verifyJWT(ctx);
+        String groupID = jwt.getClaim("custom:groupID").asString();
+        String decrypted = AuthenticationManager.decryptRequest(jwt, ctx.body());
+        DBManager.removeAdmin(groupID,decrypted);
     }
 }
