@@ -32,5 +32,46 @@ public class Util {
         return data;
     }
 
+    public static String findRemoved(List<String> o, List<String> n){
+        String r = "";
+        for (String s : o) {
+            if (!n.contains(s))
+                r = r.concat(o + ", ");
+        }
+
+        if(r.equals("")) return null;
+        else return r.substring(0, r.length()-2);
+    }
+
+    public static String findAdded(List<String> o, List<String> n){
+        String a = "";
+        for (String s : n) {
+            if (!o.contains(s))
+                a = a.concat(n + ", ");
+        }
+
+        if(a.equals("")) return null;
+        else return a.substring(0, a.length()-2);
+    }
+
+    public static List<String> addedAdmins(List<String> o, List<String> n){
+        List<String> a = new ArrayList<>();
+        for (String s : n) {
+            if (!o.contains(s))
+                a.add(s);
+        }
+        return a;
+    }
+
+    public static String getPrettyField(String s){
+        switch (s){
+            case "status": return "Status";
+            case "assignedTo": return "Assignees";
+            case "tags": return "Tags";
+            case "categories": return "Categories";
+        }
+        return null;
+    }
+
 
 }
