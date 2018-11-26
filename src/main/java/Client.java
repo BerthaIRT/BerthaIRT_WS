@@ -13,20 +13,19 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.List;
 
-public class User {
+public class Client {
+    Long lastUpdated;
     String awsUserPool = "us-east-1_4mPbywTgw";
-    public String sub; //UDID
-    public String username;
-    public String groupID;
-    public boolean isAdmin;
-    public long lastUpdated;
+    String sub; //UDID
+    String username;
+    Integer groupID;
+    boolean isAdmin;
     Cipher encrypter;
     Cipher decrypter;
     String rsaEncryptedAESKey;
     String rsaEncryptedIvParams;
 
-    public User(String sub, String username, String groupID, boolean isAdmin){
-        lastUpdated = System.currentTimeMillis();
+    public Client(String sub, String username, Integer groupID, boolean isAdmin){
         try{
             Cipher rsaEncrypter = Cipher.getInstance("RSA/ECB/PKCS1Padding");
             List<AttributeType> attribs = WSMain.idp.adminGetUser(new AdminGetUserRequest().withUsername(username).withUserPoolId(awsUserPool)).getUserAttributes();
@@ -60,10 +59,6 @@ public class User {
         this.username = username;
         this.groupID = groupID;
         this.isAdmin = isAdmin;
-    }
-
-    public RSAPublicKey getRSAPublicKey() throws InvalidKeySpecException, NoSuchAlgorithmException {
-
-        return null;
+        this.lastUpdated = System.currentTimeMillis();
     }
 }
