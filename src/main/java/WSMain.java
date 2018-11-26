@@ -57,13 +57,13 @@ public class WSMain{
         db = new DynamoDBMapper(bdb.build());
 
         groupLastUpdated = new HashMap<>();
+        List<Group> groups = db.scan(Group.class, new DynamoDBScanExpression());
         List<Report> reports = db.scan(Report.class, new DynamoDBScanExpression());
-        for(Report r : reports){
-            Map<Integer, Long> map = groupLastUpdated.get(r.getGroupID());
-            if(map == null) map = new LinkedHashMap<>();
-            map.put(r.getReportID(), System.currentTimeMillis());
-            groupLastUpdated.put(r.getGroupID(), map);
-        }
+        for(Group g : groups)
+            groupLastUpdated.put(g.getGroupID(), new LinkedHashMap<>());
+        for(Report r : reports)
+            groupLastUpdated.get(r.getGroupID()).put(r.getReportID(), System.currentTimeMillis());
+
         //WARNING DO NOT UNCOMMENT OR YOU WILL LITERALLY DELETE EVERYONE.  FOR TESTING ONLY
 //        List<UserType> l = idp.listUsers(new ListUsersRequest().withUserPoolId(awsUserPool)).getUsers();
 //        for(UserType u : l){
@@ -113,9 +113,11 @@ public class WSMain{
 
     private static String checkForUpdates(Client c, String body) {
         JsonArray idsWithUpdate = new JsonArray();
-        for(Map.Entry<Integer, Long> e : groupLastUpdated.get(c.groupID).entrySet())
-            if(e.getValue() > c.lastUpdated) idsWithUpdate.add(e.getKey());
-            else break;
+        for(Map.Entry<Integer, Long> e : groupLastUpdated.get(c.groupID).entrySet()) {
+            System.out.println(String.format("report %d was updated on %d - client updated on %d", e.getKey(), e.getValue(), c.lastUpdated));
+            if (e.getValue() > c.lastUpdated) idsWithUpdate.add(e.getKey());
+            //else break;
+        }
         c.lastUpdated = System.currentTimeMillis();
         if(idsWithUpdate.size() == 0) return "nope";
         return idsWithUpdate.toString();
@@ -132,8 +134,8 @@ public class WSMain{
 
     private static String sendSingleReport(Client c, String body) {
         Report r = db.load(Report.class, new Integer(body), c.groupID);
-        if ((!r.getGroupID().equals(c.groupID)) || (!c.isAdmin && !r.getStudentID().equals(c.username)))
-            return null;
+        //if ((!r.getGroupID().equals(c.groupID)) || (!c.isAdmin && !r.getStudentID().equals(c.username)))
+        //    return null;
         if(c.isAdmin) r.setStudentID("Hidden");
         return gson.toJson(r);
     }
