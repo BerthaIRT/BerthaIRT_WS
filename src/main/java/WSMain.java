@@ -29,7 +29,7 @@ public class WSMain{
     static Map<Integer, Map<Integer, Long>> groupLastUpdated;
 
     public static void main(String[] args){
-        Javalin app = Javalin.create().start(6969);
+        Javalin app = Javalin.create().start(80);
         jp = new JsonParser();
         gson = new Gson();
         auth = new AuthManager();
@@ -109,6 +109,15 @@ public class WSMain{
         app.put("/group/reports", ctx->auth.doSecure(ctx, WSMain::sendReportList));
 
         app.put("/refresh", ctx->auth.doSecure(ctx, WSMain::checkForUpdates));
+
+        FireMessage f = new FireMessage("MY TITLE", "TEST MESSAGE");
+        //TO SINGLE DEVICE
+        String fireBaseToken="eg3wKt0Zu3E:APA91bER9Rwe8ThTYAGMuHTmvAC9Go988TFHUvBUlxLeOexK3Uf4z1LOZ5lMvLVW13aynDK1hkTqtW7V75Uhon6pySe2JyOMpxWCrtY44RQBUG9EN7mgZZs8kihH9raLCpKIf0aKEzbO";
+        try {
+            f.sendToToken(fireBaseToken);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private static String checkForUpdates(Client c, String body) {
