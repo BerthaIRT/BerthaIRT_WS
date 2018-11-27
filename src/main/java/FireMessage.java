@@ -9,7 +9,7 @@ import java.net.URL;
 import java.util.List;
 
 public class FireMessage {
-    private final String SERVER_KEY = "XXXX";
+    private final String SERVER_KEY = "XXX";
     private final String API_URL_FCM = "https://fcm.googleapis.com/fcm/send";
     private JSONObject root;
 
@@ -22,18 +22,14 @@ public class FireMessage {
         notification.put("click_action", action);
         root.put("notification", notification);
 
+
         JSONObject data = new JSONObject();
         data.put("extra0", reportID);
         data.put("extra1", frag);
         root.put("data", data);
     }
 
-    /**
-     * Sends to multiple devices based off ID
-     * @param tokens the IDs
-     * @return
-     * @throws Exception
-     */
+
     public String sendToToken(List<String> tokens) throws Exception {
         root.put("registration_ids", new JSONArray(tokens));
         return sendPushNotification();

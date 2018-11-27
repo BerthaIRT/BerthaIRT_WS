@@ -118,10 +118,22 @@ public class WSMain{
 
         app.put("/group/alert/pull", ctx->auth.doSecure(ctx, WSMain::sendAlerts));
 
+        app.put("/group/alert/dismiss", ctx->auth.doSecure(ctx, WSMain::dismissAlert));
+
         app.put("/group/reports", ctx->auth.doSecure(ctx, WSMain::sendReportList));
+
+        app.put("/group/togglestatus", ctx->auth.doSecure(ctx, WSMain::toggleRegistration));
 
         app.put("/refresh", ctx->auth.doSecure(ctx, WSMain::checkForUpdates));
 
+    }
+
+    private static String dismissAlert(Client c, String body) {
+        Group g = db.load(Group.class, c.groupID);
+        List<Integer> li = g.getGroupAdmins().get(c.username);
+        if(li.contains(Integer.valueOf(body))) li.remove(Integer.valueOf(body));
+        db.save(g);
+        return "OK";
     }
 
     private static String checkForUpdates(Client c, String body) {
@@ -193,6 +205,15 @@ public class WSMain{
         }
         else jay.addProperty("groupName", "NONE");
         ctx.result(jay.toString());
+    }
+
+    private static String toggleRegistration(Client c, String body){
+        Group g = db.load(Group.class, c.groupID);
+        if(g.getGroupStatus().equals("Open")) g.setGroupStatus("Closed");
+        else g.setGroupStatus("Open");
+        //todo group log
+        db.save(g);
+        return g.getGroupStatus();
     }
 
     public static String createNewReport(Client c, String body){
