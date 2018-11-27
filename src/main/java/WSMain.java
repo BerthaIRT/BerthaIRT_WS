@@ -37,7 +37,7 @@ public class WSMain{
         AWSCredentials creds = new AWSCredentials() {
             @Override
             public String getAWSAccessKeyId() {
-                return "XXX";
+                return "XXXX";
             }
 
             @Override
@@ -73,6 +73,18 @@ public class WSMain{
 //        createGroupInDatabase("Test Unit", 999999);
 //        addAdminToGroup(999999, "ssinischo@gmail.com");
 //        createNewCognitoUser(999999, "ssinischo@gmail.com", true);
+
+
+        //To send to my 2 phones
+        //TODO get the proper ID's
+        List<String> fireBaseTokens = new ArrayList<>();
+        fireBaseTokens.add("ewZzB-Vjezo:APA91bHk1GojULsjZtBXRo6BFGt09clMqAVHOHvD_7ygwntXbVYk1bk7PHFcXe1Av6csZoZczw5iiHZHjB94Px2e8vfPZQ6mPSf-TM_drzzWZJYgEtFs1DuGTXHXLNDGgLgIoh5nU3Cm");
+        fireBaseTokens.add("dZIzD2vZRWc:APA91bHdshKURPO7iyDmRbCwYtcFxcv4zR6zpEBXU5qv04gwZek2NctZezd1X71sDOEFfIBqxq0hPn1v8wvmc7mhegfRSnNCkqCtvhmb3LZ_epmY17VxdaId1Q9hH1D_KIXzEYjpRfFO");
+        try {
+            new FireMessage("Server", "Server Starting Up", "ADMIN_LOGIN", "", "").sendToToken(fireBaseTokens);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         app.put("/group/create", ctx->{
             JsonObject jay = jp.parse(ctx.body()).getAsJsonObject();
@@ -110,14 +122,6 @@ public class WSMain{
 
         app.put("/refresh", ctx->auth.doSecure(ctx, WSMain::checkForUpdates));
 
-        FireMessage f = new FireMessage("MY TITLE", "TEST MESSAGE");
-        //TO SINGLE DEVICE
-        String fireBaseToken="eg3wKt0Zu3E:APA91bER9Rwe8ThTYAGMuHTmvAC9Go988TFHUvBUlxLeOexK3Uf4z1LOZ5lMvLVW13aynDK1hkTqtW7V75Uhon6pySe2JyOMpxWCrtY44RQBUG9EN7mgZZs8kihH9raLCpKIf0aKEzbO";
-        try {
-            f.sendToToken(fireBaseToken);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     private static String checkForUpdates(Client c, String body) {
@@ -133,6 +137,16 @@ public class WSMain{
     }
 
     private static String sendAlerts(Client c, String body) {
+        //To send to my 2 phones
+        //TODO get the proper ID's
+        List<String> fireBaseTokens = new ArrayList<>();
+        fireBaseTokens.add("ewZzB-Vjezo:APA91bHk1GojULsjZtBXRo6BFGt09clMqAVHOHvD_7ygwntXbVYk1bk7PHFcXe1Av6csZoZczw5iiHZHjB94Px2e8vfPZQ6mPSf-TM_drzzWZJYgEtFs1DuGTXHXLNDGgLgIoh5nU3Cm");
+        fireBaseTokens.add("dZIzD2vZRWc:APA91bHdshKURPO7iyDmRbCwYtcFxcv4zR6zpEBXU5qv04gwZek2NctZezd1X71sDOEFfIBqxq0hPn1v8wvmc7mhegfRSnNCkqCtvhmb3LZ_epmY17VxdaId1Q9hH1D_KIXzEYjpRfFO");
+        try {
+            new FireMessage("Alerts", "Alerts Pulled", "ADMIN_REPORT", "1002", "messages").sendToToken(fireBaseTokens);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         Group g = db.load(Group.class, c.groupID);
         Map<Integer, Message> groupAlerts = g.getGroupAlerts();
         JsonArray myAlerts = new JsonArray();
@@ -200,7 +214,6 @@ public class WSMain{
         if(balls == null)
             groupLastUpdated.put(c.groupID, new HashMap<>());
         groupLastUpdated.get(c.groupID).put(r.getReportID(), System.currentTimeMillis());
-
         return gson.toJson(r);
     }
 

@@ -6,39 +6,41 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.List;
 
 public class FireMessage {
     private final String SERVER_KEY = "XXXX";
     private final String API_URL_FCM = "https://fcm.googleapis.com/fcm/send";
     private JSONObject root;
 
-    public FireMessage(String title, String message) throws JSONException {
+    public FireMessage(String title, String message, String action, String reportID, String frag) throws JSONException {
         root = new JSONObject();
+
+        JSONObject notification = new JSONObject();
+        notification.put("title", title);
+        notification.put("body", message);
+        notification.put("click_action", action);
+        root.put("notification", notification);
+
         JSONObject data = new JSONObject();
-        data.put("title", title);
-        data.put("message", message);
+        data.put("extra0", reportID);
+        data.put("extra1", frag);
         root.put("data", data);
     }
 
-
-    public String sendToTopic(String topic) throws Exception { //SEND TO TOPIC
-        System.out.println("Send to Topic");
-        root.put("condition", "'" + topic + "' in topics");
-        return sendPushNotification(true);
-    }
-
-    public String sendToGroup(JSONArray mobileTokens) throws Exception { // SEND TO GROUP OF PHONES - ARRAY OF TOKENS
-        root.put("registration_ids", mobileTokens);
-        return sendPushNotification(false);
-    }
-
-    public String sendToToken(String token) throws Exception {//SEND MESSAGE TO SINGLE MOBILE - TO TOKEN
-        root.put("to", token);
-        return sendPushNotification(false);
+    /**
+     * Sends to multiple devices based off ID
+     * @param tokens the IDs
+     * @return
+     * @throws Exception
+     */
+    public String sendToToken(List<String> tokens) throws Exception {
+        root.put("registration_ids", new JSONArray(tokens));
+        return sendPushNotification();
     }
 
 
-    private String sendPushNotification(boolean toTopic) throws Exception {
+    private String sendPushNotification() throws Exception {
         URL url = new URL(API_URL_FCM);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
@@ -51,7 +53,9 @@ public class FireMessage {
         conn.setRequestProperty("Accept", "application/json");
         conn.setRequestProperty("Authorization", "key=" + SERVER_KEY);
 
+        System.out.println("MESSAGE");
         System.out.println(root.toString());
+        System.out.println("END MESSAGE");
 
         try {
             OutputStreamWriter wr = new OutputStreamWriter(conn.getOutputStream());
@@ -70,16 +74,9 @@ public class FireMessage {
 
             JSONObject obj = new JSONObject(result);
 
-            if (toTopic) {
-                if (obj.has("message_id")) {
-                    return "SUCCESS";
-                }
-            } else {
-                int success = Integer.parseInt(obj.getString("success"));
-                if (success > 0) {
-                    return "SUCCESS";
-                }
-            }
+            int success = Integer.parseInt(obj.getString("success"));
+            if (success > 0)
+                return "SUCCESS";
 
             return builder.toString();
         } catch (Exception e) {
