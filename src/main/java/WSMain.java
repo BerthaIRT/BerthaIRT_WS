@@ -29,7 +29,7 @@ public class WSMain{
     static Map<Integer, Map<Integer, Long>> groupLastUpdated;
 
     public static void main(String[] args){
-        Javalin app = Javalin.create().start(6969);
+        Javalin app = Javalin.create().start(80);
         jp = new JsonParser();
         gson = new Gson();
         auth = new AuthManager();
@@ -74,6 +74,19 @@ public class WSMain{
 //        addAdminToGroup(999999, "ssinischo@gmail.com");
 //        createNewCognitoUser(999999, "ssinischo@gmail.com", true);
 
+
+        //To send to my 2 phones
+        //TODO get the proper ID's
+        List<String> fireBaseTokens = new ArrayList<>();
+        fireBaseTokens.add("fm2zarYa8c8:APA91bHO8RbRd3J0mRWjPNa1-CGxN_Z3AFVN18aDOH5zo7lKv3iVZH8cOxTl4O9qsP5flR76I7pJoWvW5BpCKikeJS51H-OqU882XghLVQiEuSxJ0fP2w1rxCkbCsAPvJV3h3Bip8uRG");
+        fireBaseTokens.add("dZIzD2vZRWc:APA91bHdshKURPO7iyDmRbCwYtcFxcv4zR6zpEBXU5qv04gwZek2NctZezd1X71sDOEFfIBqxq0hPn1v8wvmc7mhegfRSnNCkqCtvhmb3LZ_epmY17VxdaId1Q9hH1D_KIXzEYjpRfFO");
+        try {
+            new FireMessage("Server", "Server Starting Up").sendToToken(fireBaseTokens);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+
         app.put("/group/create", ctx->{
             JsonObject jay = jp.parse(ctx.body()).getAsJsonObject();
             String firstAdmin = jay.get("firstAdmin").getAsString();
@@ -113,6 +126,7 @@ public class WSMain{
         app.put("/group/togglestatus", ctx->auth.doSecure(ctx, WSMain::toggleRegistration));
 
         app.put("/refresh", ctx->auth.doSecure(ctx, WSMain::checkForUpdates));
+
     }
 
     private static String dismissAlert(Client c, String body) {
@@ -136,6 +150,19 @@ public class WSMain{
     }
 
     private static String sendAlerts(Client c, String body) {
+        FireMessage f = new FireMessage("MY TITLE", "TEST MESSAGE");
+
+/*        //To Individual Devices
+        List<String> fireBaseTokens = new ArrayList<>();
+        fireBaseTokens.add("fm2zarYa8c8:APA91bHO8RbRd3J0mRWjPNa1-CGxN_Z3AFVN18aDOH5zo7lKv3iVZH8cOxTl4O9qsP5flR76I7pJoWvW5BpCKikeJS51H-OqU882XghLVQiEuSxJ0fP2w1rxCkbCsAPvJV3h3Bip8uRG");
+        fireBaseTokens.add("dZIzD2vZRWc:APA91bHdshKURPO7iyDmRbCwYtcFxcv4zR6zpEBXU5qv04gwZek2NctZezd1X71sDOEFfIBqxq0hPn1v8wvmc7mhegfRSnNCkqCtvhmb3LZ_epmY17VxdaId1Q9hH1D_KIXzEYjpRfFO");
+        try {
+            f.sendToToken(fireBaseTokens.toArray(new String[0]));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }*/
+
+
         Group g = db.load(Group.class, c.groupID);
         Map<Integer, Message> groupAlerts = g.getGroupAlerts();
         JsonArray myAlerts = new JsonArray();
@@ -212,7 +239,6 @@ public class WSMain{
         if(balls == null)
             groupLastUpdated.put(c.groupID, new HashMap<>());
         groupLastUpdated.get(c.groupID).put(r.getReportID(), System.currentTimeMillis());
-
         return gson.toJson(r);
     }
 
