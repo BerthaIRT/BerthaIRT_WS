@@ -33,12 +33,7 @@ public class WSMain{
     static AuthManager auth;
     static Map<Integer, Map<Integer, Long>> groupLastUpdated;
 
-    public static void main(String[] args){
-        Javalin app = Javalin.create().start(6969);
-        jp = new JsonParser();
-        gson = new Gson();
-        auth = new AuthManager();
-
+    public static void initAWSCrap(){
         AWSCredentials creds = new AWSCredentials() {
             @Override
             public String getAWSAccessKeyId() {
@@ -51,9 +46,7 @@ public class WSMain{
             }
         };
 
-
         AWSStaticCredentialsProvider acp = new AWSStaticCredentialsProvider(creds);
-
 
         idp = AWSCognitoIdentityProviderClientBuilder.standard()
                 .withCredentials(acp).withRegion(Regions.US_EAST_1).build();
@@ -62,6 +55,17 @@ public class WSMain{
         bdb.withRegion(Regions.US_EAST_1);
         bdb.withCredentials(acp);
         db = new DynamoDBMapper(bdb.build());
+    }
+
+    public static void main(String[] args){
+        initAWSCrap();
+
+        Integer port = Integer.valueOf(System.getenv("BERTHA_PORT"));
+
+        Javalin app = Javalin.create().start(port);
+        jp = new JsonParser();
+        gson = new Gson();
+        auth = new AuthManager();
 
         groupLastUpdated = new HashMap<>();
         List<Group> groups = db.scan(Group.class, new DynamoDBScanExpression());
