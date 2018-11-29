@@ -41,7 +41,7 @@ public class AuthManager {
             JWTVerifier j = JWT.require(al).acceptLeeway(3).build();
             verified = j.verify(decoded.getToken());
         } catch (JwkException e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
             ctx.status(401);
         }
         return verified;

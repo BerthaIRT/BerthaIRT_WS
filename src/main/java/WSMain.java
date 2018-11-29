@@ -1,12 +1,17 @@
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.EnvironmentVariableCredentialsProvider;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.cognitoidp.AWSCognitoIdentityProvider;
 import com.amazonaws.services.cognitoidp.AWSCognitoIdentityProviderClientBuilder;
 import com.amazonaws.services.cognitoidp.model.*;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBQueryExpression;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBScanExpression;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
+import com.amazonaws.services.dynamodbv2.model.Condition;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -29,7 +34,7 @@ public class WSMain{
     static Map<Integer, Map<Integer, Long>> groupLastUpdated;
 
     public static void main(String[] args){
-        Javalin app = Javalin.create().start(80);
+        Javalin app = Javalin.create().start(6969);
         jp = new JsonParser();
         gson = new Gson();
         auth = new AuthManager();
@@ -37,14 +42,16 @@ public class WSMain{
         AWSCredentials creds = new AWSCredentials() {
             @Override
             public String getAWSAccessKeyId() {
-                return "XXXX";
+                return System.getenv("BERTHA_AWS_KEY");
             }
 
             @Override
             public String getAWSSecretKey() {
-                return "XXX";
+                return System.getenv("BERTHA_AWS_SECRET");
             }
         };
+
+
         AWSStaticCredentialsProvider acp = new AWSStaticCredentialsProvider(creds);
 
 
@@ -78,13 +85,15 @@ public class WSMain{
         //To send to my 2 phones
         //TODO get the proper ID's
         List<String> fireBaseTokens = new ArrayList<>();
-        fireBaseTokens.add("ewZzB-Vjezo:APA91bHk1GojULsjZtBXRo6BFGt09clMqAVHOHvD_7ygwntXbVYk1bk7PHFcXe1Av6csZoZczw5iiHZHjB94Px2e8vfPZQ6mPSf-TM_drzzWZJYgEtFs1DuGTXHXLNDGgLgIoh5nU3Cm");
-        fireBaseTokens.add("dZIzD2vZRWc:APA91bHdshKURPO7iyDmRbCwYtcFxcv4zR6zpEBXU5qv04gwZek2NctZezd1X71sDOEFfIBqxq0hPn1v8wvmc7mhegfRSnNCkqCtvhmb3LZ_epmY17VxdaId1Q9hH1D_KIXzEYjpRfFO");
-        try {
-            new FireMessage("Server", "Server Starting Up", "ADMIN_LOGIN", "", "").sendToToken(fireBaseTokens);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        //fireBaseTokens.add("ewZzB-Vjezo:APA91bHk1GojULsjZtBXRo6BFGt09clMqAVHOHvD_7ygwntXbVYk1bk7PHFcXe1Av6csZoZczw5iiHZHjB94Px2e8vfPZQ6mPSf-TM_drzzWZJYgEtFs1DuGTXHXLNDGgLgIoh5nU3Cm");
+        //fireBaseTokens.add("dZIzD2vZRWc:APA91bHdshKURPO7iyDmRbCwYtcFxcv4zR6zpEBXU5qv04gwZek2NctZezd1X71sDOEFfIBqxq0hPn1v8wvmc7mhegfRSnNCkqCtvhmb3LZ_epmY17VxdaId1Q9hH1D_KIXzEYjpRfFO");
+//
+//        try {
+//            new FireMessage("lol", "jake is gay").sendToToken(fireBaseTokens);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//       }
+
 
         app.put("/group/create", ctx->{
             JsonObject jay = jp.parse(ctx.body()).getAsJsonObject();
@@ -109,6 +118,8 @@ public class WSMain{
         app.put("/keys/verify", ctx->auth.doSecure(ctx, (c, b)->"SECURE"));
 
         app.put("/report/pull", ctx->auth.doSecure(ctx, WSMain::sendSingleReport));
+
+        app.put("/report/pull/all", ctx->auth.doSecure(ctx, WSMain::sendAllReports));
 
         app.put("/report/create", ctx->auth.doSecure(ctx, WSMain::createNewReport));
 
@@ -149,16 +160,19 @@ public class WSMain{
     }
 
     private static String sendAlerts(Client c, String body) {
-        //To send to my 2 phones
-        //TODO get the proper ID's
+        FireMessage f = new FireMessage("MY TITLE", "TEST MESSAGE");
+
+/*        //To Individual Devices
         List<String> fireBaseTokens = new ArrayList<>();
-        fireBaseTokens.add("ewZzB-Vjezo:APA91bHk1GojULsjZtBXRo6BFGt09clMqAVHOHvD_7ygwntXbVYk1bk7PHFcXe1Av6csZoZczw5iiHZHjB94Px2e8vfPZQ6mPSf-TM_drzzWZJYgEtFs1DuGTXHXLNDGgLgIoh5nU3Cm");
+        fireBaseTokens.add("fm2zarYa8c8:APA91bHO8RbRd3J0mRWjPNa1-CGxN_Z3AFVN18aDOH5zo7lKv3iVZH8cOxTl4O9qsP5flR76I7pJoWvW5BpCKikeJS51H-OqU882XghLVQiEuSxJ0fP2w1rxCkbCsAPvJV3h3Bip8uRG");
         fireBaseTokens.add("dZIzD2vZRWc:APA91bHdshKURPO7iyDmRbCwYtcFxcv4zR6zpEBXU5qv04gwZek2NctZezd1X71sDOEFfIBqxq0hPn1v8wvmc7mhegfRSnNCkqCtvhmb3LZ_epmY17VxdaId1Q9hH1D_KIXzEYjpRfFO");
         try {
-            new FireMessage("Alerts", "Alerts Pulled", "ADMIN_REPORT", "1002", "messages").sendToToken(fireBaseTokens);
+            f.sendToToken(fireBaseTokens.toArray(new String[0]));
         } catch (Exception e) {
             e.printStackTrace();
-        }
+        }*/
+
+
         Group g = db.load(Group.class, c.groupID);
         Map<Integer, Message> groupAlerts = g.getGroupAlerts();
         JsonArray myAlerts = new JsonArray();
@@ -173,6 +187,20 @@ public class WSMain{
         //    return null;
         if(c.isAdmin) r.setStudentID("Hidden");
         return gson.toJson(r);
+    }
+    private static String sendAllReports(Client c, String body) {
+        JsonArray jarray = new JsonArray();
+
+        Map<String, AttributeValue> attribs = new HashMap<>();
+        attribs.put(":id", new AttributeValue().withN("999999"));
+        List<Report> query = db.scan(Report.class, new DynamoDBScanExpression().withFilterExpression("groupID = :id").withExpressionAttributeValues(attribs));
+
+        for(Report r : query){
+            if(c.isAdmin) r.setStudentID("Hidden");
+            else if(!r.getStudentID().equals(c.username)) continue;
+            jarray.add(gson.toJson(r));
+        }
+        return jarray.toString();
     }
 
     private static String sendReportList(Client c, String body) {
