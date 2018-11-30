@@ -77,7 +77,7 @@ public class AuthManager {
         }
     }
 
-    public void issueKeys(Context ctx){
+    public User issueKeys(Context ctx){
         DecodedJWT verified = decodeJWT(ctx);
         String sub = verified.getClaim("sub").asString();
         String username = verified.getClaim("cognito:username").asString();
@@ -136,6 +136,7 @@ public class AuthManager {
         new FireMessage("test bitch", "yo yo yo", null, null, null).sendToToken(fcmList);
 
         ctx.result(jay.toString());
+        return u;
     }
 
     public Map<String, User> getUserMap(){

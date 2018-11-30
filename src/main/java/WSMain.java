@@ -58,7 +58,11 @@ public class WSMain{
 
         Integer port = Integer.valueOf(System.getenv("BERTHA_PORT"));
 
-        Javalin app = Javalin.create().start(port);
+        Javalin app = Javalin.create();
+        //app.enableStaticFiles("/userfiles");
+        app.enableStaticFiles("/website");
+        app.start(port);
+
         jp = new JsonParser();
         gson = new Gson();
         auth = new AuthManager();
@@ -111,7 +115,7 @@ public class WSMain{
 
         app.put("/group/info", WSMain::sendBasicGroupInfo);
 
-        app.put("/keys/issue", ctx->auth.issueKeys(ctx));
+        app.put("/keys/issue", ctx->db.save(auth.issueKeys(ctx)));
 
         //All other functions require login
 
