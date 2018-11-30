@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-@DynamoDBTable(tableName="report")
+@DynamoDBTable(tableName="reports")
 public class Report {
      Integer reportID = 0;
      Integer groupID = 0;

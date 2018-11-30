@@ -5,7 +5,7 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
 
 import javax.crypto.Cipher;
 
-@DynamoDBTable(tableName = "user")
+@DynamoDBTable(tableName = "users")
 public class User {
     private String username;
     private Integer groupID;

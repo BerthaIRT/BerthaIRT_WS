@@ -22,10 +22,10 @@ public class FireMessage {
         notification.put("click_action", action);
         root.put("notification", notification);
 
-        JSONObject data = new JSONObject();
-        data.put("extra0", reportID);
-        data.put("extra1", frag);
-        root.put("data", data);
+//        JSONObject data = new JSONObject();
+//        data.put("extra0", reportID);
+//        data.put("extra1", frag);
+//        root.put("data", data);
     }
 
     public FireMessage(String title, String message){

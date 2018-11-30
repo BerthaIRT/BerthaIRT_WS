@@ -5,7 +5,7 @@ import java.lang.reflect.Type;
 import java.util.*;
 
 //Main group class.  Holds information relevant for all users/admins in a specific group.
-@DynamoDBTable(tableName="group")
+@DynamoDBTable(tableName="groups")
 public class Group {
 
     private Integer groupID = 0;
@@ -20,10 +20,10 @@ public class Group {
 
     //A map where the key is the admin username/email
     //The value is a list of the alertIDs this admin has not yet dismissed
-    private Map<String, List<Integer>> groupAdmins = new HashMap<>();
+    private Map<String, List<Integer>> groupAdminAlerts = new HashMap<>();
 
     //Same as admin map, but instead of alertIDs this list contains groupReports created by the student
-    private Map<String, List<Integer>> groupStudents = new HashMap<>();
+    private Map<String, List<Integer>> groupStudentReports = new HashMap<>();
 
     //List of this group's alerts
     private Map<Integer, Message> groupAlerts = new HashMap<>();
@@ -73,21 +73,21 @@ public class Group {
         this.groupReports = groupReports;
     }
 
-    @DynamoDBAttribute(attributeName = "groupStudents")
-    public String getDBGroupStudents(){ return WSMain.gson.toJson(this.groupStudents); }
+    @DynamoDBAttribute(attributeName = "groupStudentReports")
+    public String getDBGroupStudents(){ return WSMain.gson.toJson(this.groupStudentReports); }
     public void setDBGroupStudents(String groupStudents){
         Type typeOfHashMap = new TypeToken<Map<String, List<Integer>>>() { }.getType();
-        this.groupStudents = WSMain.gson.fromJson(groupStudents, typeOfHashMap); 
+        this.groupStudentReports = WSMain.gson.fromJson(groupStudents, typeOfHashMap);
     }
 
     @DynamoDBIgnore
-    public Map<String, List<Integer>> getGroupStudents() {
-        return this.groupStudents;
+    public Map<String, List<Integer>> getGroupStudentReports() {
+        return this.groupStudentReports;
     }
 
     @DynamoDBIgnore
-    public void setGroupStudents(Map<String, List<Integer>> groupStudents) {
-        this.groupStudents = groupStudents;
+    public void setGroupStudentReports(Map<String, List<Integer>> groupStudentReports) {
+        this.groupStudentReports = groupStudentReports;
     }
 
     @DynamoDBAttribute(attributeName = "groupAlerts")
@@ -107,21 +107,21 @@ public class Group {
         this.groupAlerts = groupAlerts;
     }
 
-    @DynamoDBAttribute(attributeName = "groupAdmins")
-    public String getDBGroupAdmins(){ return WSMain.gson.toJson(this.groupAdmins); }
+    @DynamoDBAttribute(attributeName = "groupAdminAlerts")
+    public String getDBGroupAdmins(){ return WSMain.gson.toJson(this.groupAdminAlerts); }
     public void setDBGroupAdmins(String groupAdmins){
         Type typeOfHashMap = new TypeToken<Map<String, List<Integer>>>() { }.getType();
-        this.groupAdmins = WSMain.gson.fromJson(groupAdmins, typeOfHashMap); 
+        this.groupAdminAlerts = WSMain.gson.fromJson(groupAdmins, typeOfHashMap);
     }
 
     @DynamoDBIgnore
-    public Map<String, List<Integer>> getGroupAdmins() {
-        return this.groupAdmins;
+    public Map<String, List<Integer>> getGroupAdminAlerts() {
+        return this.groupAdminAlerts;
     }
 
     @DynamoDBIgnore
-    public void setGroupAdmins(Map<String, List<Integer>> groupAdmins) {
-        this.groupAdmins = groupAdmins;
+    public void setGroupAdminAlerts(Map<String, List<Integer>> groupAdminAlerts) {
+        this.groupAdminAlerts = groupAdminAlerts;
     }
 
     public void notifyUpdate(Integer reportID){
@@ -129,23 +129,32 @@ public class Group {
         groupReports.put(reportID, System.currentTimeMillis());
     }
 
-    public void addAlertForAll(Message a, String exceptAdmin){
+    public void addAlertForAll(Map<String, User> userMap, Message a, String exceptAdmin){
         a.setMessageID(groupAlerts.size() + 1);
         groupAlerts.put(a.getMessageID(), a);
-        for(Map.Entry<String, List<Integer>> e : groupAdmins.entrySet()){
-            if(exceptAdmin != null && e.getKey().equals(exceptAdmin)) continue;
+        FireMessage fm = new FireMessage("BerthaIRT", a.getMessageBody(), null, null, null);
+        List<String> adminFCM = new ArrayList<>();
+        for(Map.Entry<String, List<Integer>> e : groupAdminAlerts.entrySet()){
+            String username = e.getKey();
+            if(username.equals(exceptAdmin)) continue;
             e.getValue().add(a.getMessageID());
+            adminFCM.add(userMap.get(e.getKey()).getFcmToken());
+        }
+        fm.sendToToken(adminFCM);
+    }
+
+    public void addAlertForAdmins(Map<String, User> userMap, Message a, List<String> admins){
+        a.setMessageID(groupAlerts.size() + 1);
+        groupAlerts.put(a.getMessageID(), a);
+        FireMessage fm = new FireMessage("BerthaIRT", a.getMessageBody(), null, null, null);
+        List<String> adminFCM = new ArrayList<>();
+        for(String s : admins) {
+            groupAdminAlerts.get(s).add(a.getMessageID());
+            adminFCM.add(userMap.get(s).getFcmToken());
         }
     }
 
-    public void addAlertForAdmins(Message a, List<String> admins){
-        a.setMessageID(groupAlerts.size() + 1);
-        groupAlerts.put(a.getMessageID(), a);
-        for(String s : admins)
-            groupAdmins.get(s).add(a.getMessageID());
-    }
-
 //    public void viewedAlert(String admin, Integer id){
-//        groupAdmins.get(admin).remove(id);
+//        groupAdminAlerts.get(admin).remove(id);
 //    }
 }

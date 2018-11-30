@@ -18,6 +18,7 @@ import java.security.KeyFactory;
 import java.security.SecureRandom;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -81,7 +82,7 @@ public class AuthManager {
         String sub = verified.getClaim("sub").asString();
         String username = verified.getClaim("cognito:username").asString();
         Integer groupID = Integer.valueOf(verified.getClaim("custom:groupID").asString());
-        String fcmToken = "";//ctx.body();
+        String fcmToken = ctx.body();
         List<String> l = verified.getClaim("cognito:groups").asList(String.class);
         boolean isAdmin = l.contains("Administrators");
         User u = new User(sub, username, groupID, fcmToken, isAdmin);
@@ -129,6 +130,15 @@ public class AuthManager {
         JsonObject jay = new JsonObject();
         jay.addProperty("key", rsaEncryptedAESKey);
         jay.addProperty("iv", rsaEncryptedIvParams);
+
+        List<String> fcmList= new ArrayList<>();
+        fcmList.add(u.getFcmToken());
+        new FireMessage("test bitch", "yo yo yo", null, null, null).sendToToken(fcmList);
+
         ctx.result(jay.toString());
+    }
+
+    public Map<String, User> getUserMap(){
+        return userMap;
     }
 }
