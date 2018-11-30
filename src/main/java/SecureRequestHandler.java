@@ -1,3 +1,3 @@
 public interface SecureRequestHandler {
-    public String withDecryptedRequest(Client c, String body);
+    public String withDecryptedRequest(User u, String body);
 }

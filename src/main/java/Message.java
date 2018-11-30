@@ -15,15 +15,15 @@ public class Message {
 
     public Message(){}
 
-    public Message(Client u, String body){
+    public Message(User u, String body){
         messageTimestamp = System.currentTimeMillis();
-        messageSubject = u.username;
+        messageSubject = u.getUsername();
         messageBody = body;
     }
 
-    public Message(Client u, String body, Integer reportID){
+    public Message(User u, String body, Integer reportID){
         messageTimestamp = System.currentTimeMillis();
-        messageSubject = u.username;
+        messageSubject = u.getUsername();
         messageBody = body;
         this.reportID = reportID;
     }

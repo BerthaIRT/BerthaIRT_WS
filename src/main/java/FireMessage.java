@@ -43,30 +43,26 @@ public class FireMessage {
      * @return
      * @throws Exception
      */
-    public String sendToToken(List<String> tokens) throws Exception {
-        root.put("registration_ids", new JSONArray(tokens));
-        return sendPushNotification();
-    }
-
-
-    private String sendPushNotification() throws Exception {
-        URL url = new URL(API_URL_FCM);
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-
-        conn.setUseCaches(false);
-        conn.setDoInput(true);
-        conn.setDoOutput(true);
-        conn.setRequestMethod("POST");
-
-        conn.setRequestProperty("Content-Type", "application/json");
-        conn.setRequestProperty("Accept", "application/json");
-        conn.setRequestProperty("Authorization", "key=" + SERVER_KEY);
-
-        System.out.println("MESSAGE");
-        System.out.println(root.toString());
-        System.out.println("END MESSAGE");
+    public boolean sendToToken(List<String> tokens){
 
         try {
+            root.put("registration_ids", new JSONArray(tokens));
+            URL url = new URL(API_URL_FCM);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+
+            conn.setUseCaches(false);
+            conn.setDoInput(true);
+            conn.setDoOutput(true);
+            conn.setRequestMethod("POST");
+
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setRequestProperty("Accept", "application/json");
+            conn.setRequestProperty("Authorization", "key=" + SERVER_KEY);
+
+            System.out.println("MESSAGE");
+            System.out.println(root.toString());
+            System.out.println("END MESSAGE");
+
             OutputStreamWriter wr = new OutputStreamWriter(conn.getOutputStream());
             wr.write(root.toString());
             wr.flush();
@@ -81,16 +77,12 @@ public class FireMessage {
             System.out.println(builder);
             String result = builder.toString();
 
-            JSONObject obj = new JSONObject(result);
+            JSONObject jay = new JSONObject(result);
 
-            if (obj.getInt("success") > 0)
-                return "SUCCESS";
-
-            return builder.toString();
+            return (jay.getInt("success") > 0); //maybe we should be checking for failures instead
         } catch (Exception e) {
             e.printStackTrace();
-            return e.getMessage();
+            return false;
         }
-
     }
 }

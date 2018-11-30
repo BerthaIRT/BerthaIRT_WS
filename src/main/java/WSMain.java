@@ -119,7 +119,10 @@ public class WSMain{
 
         //All other functions require login
 
-        app.put("/keys/verify", ctx->auth.doSecure(ctx, (c, b)->"SECURE"));
+        app.put("/keys/verify", ctx->auth.doSecure(ctx, (u, b)->{
+            db.save(u);
+            return "SECURE";
+        }));
 
         app.put("/report/pull", ctx->auth.doSecure(ctx, WSMain::sendSingleReport));
 
@@ -143,27 +146,27 @@ public class WSMain{
 
     }
 
-    private static String dismissAlert(Client c, String body) {
-        Group g = db.load(Group.class, c.groupID);
-        List<Integer> li = g.getGroupAdmins().get(c.username);
+    private static String dismissAlert(User u, String body) {
+        Group g = db.load(Group.class, u.getGroupID());
+        List<Integer> li = g.getGroupAdmins().get(u.getUsername());
         if(li.contains(Integer.valueOf(body))) li.remove(Integer.valueOf(body));
         db.save(g);
         return "OK";
     }
 
-    private static String checkForUpdates(Client c, String body) {
+    private static String checkForUpdates(User u, String body) {
         JsonArray idsWithUpdate = new JsonArray();
-        for(Map.Entry<Integer, Long> e : groupLastUpdated.get(c.groupID).entrySet()) {
-            System.out.println(String.format("report %d was updated on %d - client updated on %d", e.getKey(), e.getValue(), c.lastUpdated));
-            if (e.getValue() > c.lastUpdated) idsWithUpdate.add(e.getKey());
+        for(Map.Entry<Integer, Long> e : groupLastUpdated.get(u.getGroupID()).entrySet()) {
+            System.out.println(String.format("report %d was updated on %d - client updated on %d", e.getKey(), e.getValue(), u.getLastUpdated()));
+            if (e.getValue() > u.getLastUpdated()) idsWithUpdate.add(e.getKey());
             //else break;
         }
-        c.lastUpdated = System.currentTimeMillis();
+        u.setLastUpdated(System.currentTimeMillis());
         if(idsWithUpdate.size() == 0) return "nope";
         return idsWithUpdate.toString();
     }
 
-    private static String sendAlerts(Client c, String body) {
+    private static String sendAlerts(User u, String body) {
         FireMessage f = new FireMessage("MY TITLE", "TEST MESSAGE");
 
 /*        //To Individual Devices
@@ -177,22 +180,22 @@ public class WSMain{
         }*/
 
 
-        Group g = db.load(Group.class, c.groupID);
+        Group g = db.load(Group.class, u.getGroupID());
         Map<Integer, Message> groupAlerts = g.getGroupAlerts();
         JsonArray myAlerts = new JsonArray();
-        for(Integer i : g.getGroupAdmins().get(c.username)) //get this admin's unread alerts
+        for(Integer i : g.getGroupAdmins().get(u.getUsername())) //get this admin's unread alerts
             myAlerts.add(gson.toJson(groupAlerts.get(i))); //add unread alert to list
         return myAlerts.toString();
     }
 
-    private static String sendSingleReport(Client c, String body) {
-        Report r = db.load(Report.class, new Integer(body), c.groupID);
-        //if ((!r.getGroupID().equals(c.groupID)) || (!c.isAdmin && !r.getStudentID().equals(c.username)))
+    private static String sendSingleReport(User u, String body) {
+        Report r = db.load(Report.class, new Integer(body), u.getGroupID());
+        //if ((!r.getGroupID().equals(u.getGroupID())) || (!u.getIsAdmin() && !r.getStudentID().equals(u.getUsername())))
         //    return null;
-        if(c.isAdmin) r.setStudentID("Hidden");
+        if(u.getIsAdmin()) r.setStudentID("Hidden");
         return gson.toJson(r);
     }
-    private static String sendAllReports(Client c, String body) {
+    private static String sendAllReports(User u, String body) {
         JsonArray jarray = new JsonArray();
 
         Map<String, AttributeValue> attribs = new HashMap<>();
@@ -200,28 +203,28 @@ public class WSMain{
         List<Report> query = db.scan(Report.class, new DynamoDBScanExpression().withFilterExpression("groupID = :id").withExpressionAttributeValues(attribs));
 
         for(Report r : query){
-            if(c.isAdmin) r.setStudentID("Hidden");
-            else if(!r.getStudentID().equals(c.username)) continue;
+            if(u.getIsAdmin()) r.setStudentID("Hidden");
+            else if(!r.getStudentID().equals(u.getUsername())) continue;
             jarray.add(gson.toJson(r));
         }
         return jarray.toString();
     }
 
-    private static String sendReportList(Client c, String body) {
-        Group g = db.load(Group.class, c.groupID);
+    private static String sendReportList(User u, String body) {
+        Group g = db.load(Group.class, u.getGroupID());
         JsonArray ids = new JsonArray();
-        if(c.isAdmin)
+        if(u.getIsAdmin())
             for(Integer i : g.getGroupReports().keySet())
                 ids.add(i);
         else
-            for(Integer i : g.getGroupStudents().get(c.username))
+            for(Integer i : g.getGroupStudents().get(u.getUsername()))
                 ids.add(i);
 
         return ids.toString();
     }
 
-    private static String sendAdminList(Client c, String body) {
-        Group g = db.load(Group.class, c.groupID);
+    private static String sendAdminList(User u, String body) {
+        Group g = db.load(Group.class, u.getGroupID());
         JsonArray adminList = new JsonArray();
         for(String s : g.getGroupAdmins().keySet()) adminList.add(s);
         return adminList.toString();
@@ -239,8 +242,8 @@ public class WSMain{
         ctx.result(jay.toString());
     }
 
-    private static String toggleRegistration(Client c, String body){
-        Group g = db.load(Group.class, c.groupID);
+    private static String toggleRegistration(User u, String body){
+        Group g = db.load(Group.class, u.getGroupID());
         if(g.getGroupStatus().equals("Open")) g.setGroupStatus("Closed");
         else g.setGroupStatus("Open");
         //todo group log
@@ -248,29 +251,29 @@ public class WSMain{
         return g.getGroupStatus();
     }
 
-    public static String createNewReport(Client c, String body){
+    public static String createNewReport(User u, String body){
         Report r = gson.fromJson(body, Report.class);
         r.setCreationDate(System.currentTimeMillis());
-        r.setStudentID(c.username);
-        r.setGroupID(c.groupID);
+        r.setStudentID(u.getUsername());
+        r.setGroupID(u.getGroupID());
         r.setStatus("New");
 
-        Group g = db.load(Group.class, c.groupID);
+        Group g = db.load(Group.class, u.getGroupID());
         r.setReportID(g.getGroupReports().size() + 1000);
         g.getGroupReports().put(r.getReportID(), System.currentTimeMillis());
 
-        g.addAlertForAll(new Message(c, "New report", r.getReportID()), null);
+        g.addAlertForAll(new Message(u, "New report", r.getReportID()), null);
         db.save(r);
         db.save(g);
 
         Map<Integer, Long> balls = groupLastUpdated.get(r.getGroupID());
         if(balls == null)
-            groupLastUpdated.put(c.groupID, new HashMap<>());
-        groupLastUpdated.get(c.groupID).put(r.getReportID(), System.currentTimeMillis());
+            groupLastUpdated.put(u.getGroupID(), new HashMap<>());
+        groupLastUpdated.get(u.getGroupID()).put(r.getReportID(), System.currentTimeMillis());
         return gson.toJson(r);
     }
 
-    public static String updateReport(Client c, String body){
+    public static String updateReport(User u, String body){
         Report rNew = gson.fromJson(body, Report.class);
         Report rOld = db.load(Report.class, rNew.getReportID(), rNew.getGroupID());
 
@@ -283,11 +286,11 @@ public class WSMain{
         }catch (Exception e){e.printStackTrace();}
         if(changes.size() == 0) return body;
 
-        Group g = db.load(Group.class, c.groupID);
+        Group g = db.load(Group.class, u.getGroupID());
 
         boolean notifyAssignees = false;
         List<String> assigneeAlertList = rNew.getAssignedTo();
-        assigneeAlertList.removeIf( s -> s.equals(c.username));
+        assigneeAlertList.removeIf( s -> s.equals(u.getUsername()));
 
         while(changes.size() > 0){
             Field changedField = changes.remove(0);
@@ -297,57 +300,57 @@ public class WSMain{
             switch (changedField.getName()){
                 case "status":
                     String status = rNew.getStatus();
-                    rNew.addLog(new Message(c, "Status changed to " + status));
+                    rNew.addLog(new Message(u, "Status changed to " + status));
                     if(status.equals("Open"))
-                        g.addAlertForAll(new Message(c, "Re-opened report", rNew.getReportID()), null);
+                        g.addAlertForAll(new Message(u, "Re-opened report", rNew.getReportID()), null);
                     else notifyAssignees = true;
                     break;
                 case "assignedTo":
                     removed = Util.findRemoved(rOld.getAssignedTo(), rNew.getAssignedTo());
                     added = Util.findAdded(rOld.getAssignedTo(), rNew.getAssignedTo());
-                    if(removed != null) rNew.addLog(new Message(c,"Removed assignees " + removed));
-                    if(added != null) rNew.addLog(new Message(c,"Added assignees " + added));
-                    g.addAlertForAdmins(new Message(c, "Assignees updated", rNew.getReportID()), rOld.getAssignedTo());
-                    g.addAlertForAdmins(new Message(c, "Assigned to me", rNew.getReportID()), Util.addedAdmins(rOld.getAssignedTo(), rNew.getAssignedTo()));
+                    if(removed != null) rNew.addLog(new Message(u,"Removed assignees " + removed));
+                    if(added != null) rNew.addLog(new Message(u,"Added assignees " + added));
+                    g.addAlertForAdmins(new Message(u, "Assignees updated", rNew.getReportID()), rOld.getAssignedTo());
+                    g.addAlertForAdmins(new Message(u, "Assigned to me", rNew.getReportID()), Util.addedAdmins(rOld.getAssignedTo(), rNew.getAssignedTo()));
                     break;
                 case "tags":
                     removed = Util.findRemoved(rOld.getTags(), rNew.getTags());
                     added = Util.findAdded(rOld.getTags(), rNew.getTags());
-                    if(removed != null) rNew.addLog(new Message(c, "Removed tags " + removed));
-                    if(added != null) rNew.addLog(new Message(c,"Added tags " + added));
+                    if(removed != null) rNew.addLog(new Message(u, "Removed tags " + removed));
+                    if(added != null) rNew.addLog(new Message(u,"Added tags " + added));
                     notifyAssignees = true;
                     break;
                 case "categories":
                     removed = Util.findRemoved(rOld.getCategories(), rNew.getCategories());
                     added = Util.findAdded(rOld.getCategories(), rNew.getCategories());
-                    if(removed != null) rNew.addLog(new Message(c, "Removed category " + removed));
-                    if(added != null) rNew.addLog(new Message(c, "Added category " + added));
+                    if(removed != null) rNew.addLog(new Message(u, "Removed category " + removed));
+                    if(added != null) rNew.addLog(new Message(u, "Added category " + added));
                     notifyAssignees = true;
                     break;
                 case "notes":
-                    rNew.addLog(new Message(c, "Added administrator note #" + rNew.getNotes().size()));
+                    rNew.addLog(new Message(u, "Added administrator note #" + rNew.getNotes().size()));
                     Message newNote = rNew.getNotes().get(rNew.getNotes().size()-1);
                     newNote.setMessageID(rNew.getNotes().size());
                     newNote.setReportID(rNew.getReportID());
-                    newNote.setMessageSubject(c.username);
+                    newNote.setMessageSubject(u.getUsername());
                     newNote.setMessageTimestamp(System.currentTimeMillis());
                     notifyAssignees = true;
                     break;
                 case "messages":
-                    rNew.addLog(new Message(c, "Sent message #" + rNew.getMessages().size()));
+                    rNew.addLog(new Message(u, "Sent message #" + rNew.getMessages().size()));
                     Message newMessage = rNew.getMessages().get(rNew.getMessages().size()-1);
                     newMessage.setMessageID(rNew.getMessages().size());
                     newMessage.setReportID(rNew.getReportID());
-                    newMessage.setMessageSubject(c.username);
+                    newMessage.setMessageSubject(u.getUsername());
                     newMessage.setMessageTimestamp(System.currentTimeMillis());
 
-                    if(c.isAdmin){
-                        g.addAlertForAdmins(new Message(c, "Admin message", rNew.getReportID()), assigneeAlertList);
+                    if(u.getIsAdmin()){
+                        g.addAlertForAdmins(new Message(u, "Admin message", rNew.getReportID()), assigneeAlertList);
                     }
-                    else if (rNew.getAssignedTo().size() > 0) g.addAlertForAdmins(new Message(c, "Student message", rNew.getReportID()), rNew.getAssignedTo());
-                    else g.addAlertForAll(new Message(c, "Student message", rNew.getReportID()), null);
+                    else if (rNew.getAssignedTo().size() > 0) g.addAlertForAdmins(new Message(u, "Student message", rNew.getReportID()), rNew.getAssignedTo());
+                    else g.addAlertForAll(new Message(u, "Student message", rNew.getReportID()), null);
             }
-            if(notifyAssignees) g.addAlertForAdmins(new Message(c, "Details updated", rNew.getReportID()), assigneeAlertList);
+            if(notifyAssignees) g.addAlertForAdmins(new Message(u, "Details updated", rNew.getReportID()), assigneeAlertList);
         }
         g.notifyUpdate(rNew.getReportID());
         db.save(rNew);
@@ -360,6 +363,7 @@ public class WSMain{
 
     private static Integer createGroupInDatabase(String groupName, Integer newGroupID){
         if(newGroupID == null) newGroupID = new Random().nextInt(1000000);
+        if(newGroupID < 100000 || db.load(Group.class, newGroupID) != null) return createGroupInDatabase(groupName, null);
         Group g = new Group();
         g.setGroupName(groupName);
         g.setGroupID(newGroupID);
