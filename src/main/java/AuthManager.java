@@ -117,6 +117,9 @@ public class AuthManager {
             e.init(Cipher.ENCRYPT_MODE, aesKey, initializationVectors);
             d.init(Cipher.DECRYPT_MODE, aesKey, initializationVectors);
 
+            u.setEncrypter(e);
+            u.setDecrypter(d);
+
             rsaEncryptedAESKey = Util.asHex(rsaEncrypter.doFinal(aesKey.getEncoded()));
             rsaEncryptedIvParams = Util.asHex(rsaEncrypter.doFinal(initializationVectors.getIV()));
         }catch (Exception e){e.printStackTrace();}
