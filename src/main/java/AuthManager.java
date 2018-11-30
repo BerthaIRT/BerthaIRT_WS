@@ -80,7 +80,7 @@ public class AuthManager {
         DecodedJWT verified = decodeJWT(ctx);
         String sub = verified.getClaim("sub").asString();
         String username = verified.getClaim("cognito:username").asString();
-        Integer groupID = verified.getClaim("custom:groupID").asInt();
+        Integer groupID = Integer.valueOf(verified.getClaim("custom:groupID").asString());
         String fcmToken = "";//ctx.body();
         List<String> l = verified.getClaim("cognito:groups").asList(String.class);
         boolean isAdmin = l.contains("Administrators");
@@ -116,6 +116,9 @@ public class AuthManager {
 
             e.init(Cipher.ENCRYPT_MODE, aesKey, initializationVectors);
             d.init(Cipher.DECRYPT_MODE, aesKey, initializationVectors);
+
+            u.setEncrypter(e);
+            u.setDecrypter(d);
 
             rsaEncryptedAESKey = Util.asHex(rsaEncrypter.doFinal(aesKey.getEncoded()));
             rsaEncryptedIvParams = Util.asHex(rsaEncrypter.doFinal(initializationVectors.getIV()));
