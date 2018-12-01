@@ -12,14 +12,19 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.sun.org.apache.bcel.internal.util.ClassPath;
 import io.javalin.Javalin;
 import io.javalin.Context;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.lang.reflect.Field;
 import java.security.SecureRandom;
 import java.util.*;
 
 public class WSMain{
+    static String resourcePath = "";
+
     static JsonParser jp;
     static Gson gson;
     static AWSCognitoIdentityProvider idp;
@@ -59,7 +64,7 @@ public class WSMain{
         Integer port = Integer.valueOf(System.getenv("BERTHA_PORT"));
 
         Javalin app = Javalin.create();
-        //app.enableStaticFiles("/userfiles");
+        app.enableStaticFiles("/userfiles");
         app.enableStaticFiles("/website");
         app.start(port);
 
@@ -97,7 +102,12 @@ public class WSMain{
 //        } catch (Exception e) {
 //            e.printStackTrace();
 //       }
+        File dir = new File(WSMain.class.getClassLoader().getResource("userfiles").getFile()); //maybe not necessary
+        resourcePath = dir.getAbsolutePath();
 
+        app.before(ctx->{
+            System.out.println(ctx.path());
+        });
 
         app.put("/group/create", ctx->{
             JsonObject jay = jp.parse(ctx.body()).getAsJsonObject();
@@ -142,8 +152,19 @@ public class WSMain{
 
         app.put("/group/togglestatus", ctx->auth.doSecure(ctx, WSMain::toggleRegistration));
 
+        app.put("/group/emblem", ctx->auth.doSecure(ctx, WSMain::downloadEmblem));
+
         app.put("/refresh", ctx->auth.doSecure(ctx, WSMain::checkForUpdates));
 
+    }
+
+    private static String downloadEmblem(User u, String body) {
+        byte[] imgData = Util.fromHexString(body);
+        try {
+            FileOutputStream stream = new FileOutputStream(resourcePath + "/emblem/" + u.getGroupID() + ".png");
+            stream.write(imgData);
+        } catch(Exception e ){e.printStackTrace();}
+        return "OK";
     }
 
     private static String dismissAlert(User u, String body) {
@@ -183,7 +204,10 @@ public class WSMain{
         Group g = db.load(Group.class, u.getGroupID());
         Map<Integer, Message> groupAlerts = g.getGroupAlerts();
         JsonArray myAlerts = new JsonArray();
-        for(Integer i : g.getGroupAdminAlerts().get(u.getUsername())) //get this admin's unread alerts
+        List<Integer> alertIDs = g.getGroupAdminAlerts().get(u.getUsername());
+
+        if(alertIDs == null) return myAlerts.toString();
+        for(Integer i : alertIDs) //get this admin's unread alerts
             myAlerts.add(gson.toJson(groupAlerts.get(i))); //add unread alert to list
         return myAlerts.toString();
     }
