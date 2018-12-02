@@ -1,30 +1,37 @@
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBHashKey;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBIgnore;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBRangeKey;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
+import com.amazonaws.services.dynamodbv2.datamodeling.*;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonParser;
 
 import javax.crypto.Cipher;
+import java.util.ArrayList;
+import java.util.List;
 
 @DynamoDBTable(tableName = "users")
 public class User {
+
+    private boolean isAdmin;
     private String username;
     private Integer groupID;
 
     private String fcmToken;
-    private Long lastUpdated;
-    private boolean isAdmin;
+
+    private List<String> alerts;
 
     private String sub;
     private Cipher encrypter;
     private Cipher decrypter;
 
-    public User(String sub, String username, Integer groupID, String fcmToken, boolean isAdmin){
-        this.sub = sub;
+    public User(){
+
+    }
+
+    public User(String username, String sub, Integer groupID, String fcmToken, boolean isAdmin){
         this.username = username;
+        this.sub = sub;
         this.groupID = groupID;
         this.fcmToken = fcmToken;
+        this.alerts = new ArrayList<>();
         this.isAdmin = isAdmin;
-        this.lastUpdated = System.currentTimeMillis();
     }
 
     @DynamoDBHashKey(attributeName="username")
@@ -53,26 +60,12 @@ public class User {
         this.fcmToken = fcmToken;
     }
 
-    public Long getLastUpdated() {
-        return lastUpdated;
-    }
+    public List<String> getAlerts() { return alerts; }
 
-    public void setLastUpdated(Long lastUpdated) {
-        this.lastUpdated = lastUpdated;
-    }
-
-    public boolean getIsAdmin() {
-        return isAdmin;
-    }
-
-    public void setAdmin(boolean admin) {
-        isAdmin = admin;
-    }
+    public void setAlerts(List<String> alerts) { this.alerts = alerts; }
 
     @DynamoDBIgnore
-    public String getSub() {
-        return sub;
-    }
+    public String getSub() { return sub; }
 
     public void setSub(String sub) {
         this.sub = sub;
@@ -94,5 +87,14 @@ public class User {
 
     public void setDecrypter(Cipher decrypter) {
         this.decrypter = decrypter;
+    }
+
+    @DynamoDBIgnore
+    public boolean isAdmin() {
+        return isAdmin;
+    }
+
+    public void setAdmin(boolean admin) {
+        isAdmin = admin;
     }
 }
