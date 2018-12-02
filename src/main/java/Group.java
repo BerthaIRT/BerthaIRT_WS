@@ -14,9 +14,10 @@ public class Group {
     private String groupStatus = "";
 
     private List<String> adminList = new ArrayList<>();
-    private List<String> studentList = new ArrayList<>();
 
     private Integer reportCount = 0;
+
+    private Integer studentCount = 0;
 
     public Group(){}
 
@@ -53,18 +54,19 @@ public class Group {
         this.adminList = adminList;
     }
 
-    public List<String> getStudentList() {
-        return studentList;
-    }
-
-    public void setStudentList(List<String> studentList) {
-        this.studentList = studentList;
-    }
     public Integer getReportCount() {
         return reportCount;
     }
 
     public void setReportCount(Integer reportCount) {
         this.reportCount = reportCount;
+    }
+
+    public Integer getStudentCount() {
+        return studentCount;
+    }
+
+    public void setStudentCount(Integer studentCount) {
+        this.studentCount = studentCount;
     }
 }

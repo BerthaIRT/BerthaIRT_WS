@@ -48,8 +48,9 @@ public class GroupManager extends WSMain{
     public static void addStudentToGroup(Context ctx){
         Integer groupID = new Integer(ctx.body());
         Group g = groupMap.get(groupID);
-        String newStudentUsername = ("student-" + groupID + "-" + (1000 + g.getStudentList().size()));
-        g.getStudentList().add(newStudentUsername);
+        Integer newStudentID = 1000 + g.getStudentCount();
+        String newStudentUsername = ("student-" + groupID + "-" + newStudentID);
+        g.setStudentCount(newStudentID-1000);
         db.save(g);
         ctx.result(createNewCognitoUser(groupID, newStudentUsername, false));
     }
