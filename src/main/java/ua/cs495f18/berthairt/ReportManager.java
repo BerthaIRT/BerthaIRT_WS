@@ -41,8 +41,6 @@ public class ReportManager extends WSMain{
     static String createNewReport(User u, String body){
         Report r = gson.fromJson(body, Report.class);
         r.setCreationDate(System.currentTimeMillis());
-        if(r.getIncidentDate() > System.currentTimeMillis())
-            r.setIncidentDate(System.currentTimeMillis());
         r.setStudentID(u.getUsername());
         r.setGroupID(u.getGroupID());
         r.setStatus("New");
