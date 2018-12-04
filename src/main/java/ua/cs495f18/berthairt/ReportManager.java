@@ -68,7 +68,7 @@ public class ReportManager extends WSMain{
 
     static String updateReport(User u, String body){
         Report neww = gson.fromJson(body, Report.class);
-        Report oldd = reportMap.get(neww.getGroupID()).get(neww.getReportID()-1000);
+        Report oldd = reportMap.get(neww.getGroupID()).get(neww.getReportID());
         Group g = groupMap.get(neww.getGroupID());
 
         if(neww.getStudentID().equals("Hidden")) neww.setStudentID(oldd.getStudentID());
