@@ -4,7 +4,9 @@ import com.google.gson.JsonArray;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ReportManager extends WSMain{
 
@@ -22,9 +24,9 @@ public class ReportManager extends WSMain{
 //        List<ua.cs495f18.berthairt.Report> query = db.scan(ua.cs495f18.berthairt.Report.class, new DynamoDBScanExpression().withFilterExpression("groupID = :id").withExpressionAttributeValues(attribs));
 
         JsonArray jarray = new JsonArray();
-        List<Report> l = reportMap.get(u.getGroupID());
+        Map<Integer, Report> l = reportMap.get(u.getGroupID());
         if(l != null){
-            for(Report r : l){
+            for(Report r : l.values()){
                 String jay = gson.toJson(r);
                 if(!u.isAdmin() && !u.getUsername().equals(r.getStudentID()))
                     continue;
@@ -49,13 +51,13 @@ public class ReportManager extends WSMain{
         r.setReportID(i + 1000);
         r.addLog(new Message(u, "Report created"));
 
-        List<Report> groupReports = reportMap.get(r.getGroupID());
+        Map<Integer, Report> groupReports = reportMap.get(r.getGroupID());
         if(groupReports == null){
-            List<Report> newList = new ArrayList<>();
-            newList.add(r);
-            reportMap.put(r.getGroupID(), newList);
+            Map<Integer, Report> newMap = new HashMap<>();
+            newMap.put(r.getReportID(), r);
+            reportMap.put(r.getGroupID(), newMap);
         }
-        else groupReports.add(r);
+        else groupReports.put(r.getReportID(), r);
 
         db.save(r);
         db.save(g);
@@ -137,7 +139,7 @@ public class ReportManager extends WSMain{
             }
             if(combineChangesMessage != null) combineChangesMessage.send();
         }
-        reportMap.get(neww.getGroupID()).add(neww);
+        reportMap.get(neww.getGroupID()).put(neww.getReportID(), neww);
         db.save(neww);
         return gson.toJson(neww, Report.class);
     }

@@ -16,7 +16,7 @@ public class WSMain extends AWSManager{
     static final boolean ENCRYPTION_ENABLED = false;
 
     static Map<String, User> userMap = new HashMap<>();
-    static Map<Integer, List<Report>> reportMap = new HashMap<>();
+    static Map<Integer, Map<Integer, Report>> reportMap = new HashMap<>();
     static Map<Integer, Group> groupMap = new HashMap<>();
     static Gson gson = new Gson();
     static JsonParser jp = new JsonParser();
@@ -50,6 +50,7 @@ public class WSMain extends AWSManager{
         app.put("*/report/pull", requestIdentifier(ReportManager::sendSingle));
 
         app.put("*/alerts", requestIdentifier((u, b)-> gson.toJson(u.getAlerts())));
+        app.put("*/group/addadmin", requestIdentifier(GroupManager::addAdminToGroup));
         app.put("*/group/togglestatus", requestIdentifier(GroupManager::toggleStatus));
         app.put("*/group/uploademblem", requestIdentifier(UserFileManager::downloadEmblem));
         app.put("*/forgotpassword", AWSManager::forgotCognitoPassword);
@@ -79,13 +80,13 @@ public class WSMain extends AWSManager{
         for(Group g : groups) {
             log("Loading group " + g.getGroupID(), "INIT");
             groupMap.put(g.getGroupID(), g);
-            reportMap.put(g.getGroupID(), new ArrayList<>());
+            reportMap.put(g.getGroupID(), new HashMap<>());
         }
 
         for(Report r : reports){
             log("Loading report " + r.getReportID() + " for group " + r.getGroupID(), "INIT");
-            List<Report> groupReports = reportMap.get(r.getGroupID());
-                groupReports.add(r);
+            Map<Integer, Report> groupReports = reportMap.get(r.getGroupID());
+                groupReports.put(r.getReportID(), r);
             }
 
         for(User u : users){
@@ -94,8 +95,8 @@ public class WSMain extends AWSManager{
             userMap.put(u.getUsername(), u);
         }
 
-        User me = userMap.get("ssinischo@gmail.com");
-        new FireMessage(me).withRecipient(me.getUsername()).withTitle("hello").withBody("test").send();
+        //User me = userMap.get("ssinischo@gmail.com");
+        //new FireMessage(me).withRecipient(me.getUsername()).withTitle("hello").withBody("test").send();
 
         Integer port = Integer.valueOf(System.getenv("BERTHA_PORT"));
         Javalin app = Javalin.create();

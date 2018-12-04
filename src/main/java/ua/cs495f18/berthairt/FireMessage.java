@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class FireMessage {
-    private final String SERVER_KEY = "AAAA_TihoIY:APA91bGvMrudmh6Vb5NUaSEbXH5CCkdjLMgKv3JgxV0ak0ZffVE0KdcRw3tsMk5piN0zBI0YOna6Sz0vlRDTVnn-9Tyl2uC78NgoaGJoOLGXXQuGBGO6n0eQK6Oqtm8qb74QtBjQV6Su";//System.getenv("BERTHA_FCM_KEY");
+    private final String SERVER_KEY = "";//System.getenv("BERTHA_FCM_KEY");
     private final String API_URL_FCM = "https://fcm.googleapis.com/fcm/send";
     
     private JsonObject payload;
@@ -64,6 +64,7 @@ public class FireMessage {
         withRecipients(g.getAdminList()).withRecipient(r.getStudentID());
         withReportID(r.getReportID().toString());
         send();
+        withTitle("BerthaIRT");
 
         if(sender.isAdmin())
             withClickAction("ADMIN_REPORT");
