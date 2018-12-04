@@ -59,6 +59,7 @@ public class WSMain extends AWSManager{
 
     public static void main(String[] args){
         initAWSCrap();
+        FireMessage.SERVER_KEY = System.getenv("BERTHA_FCM_KEY");
 
 //        List<UserType> l = idp.listUsers(new ListUsersRequest().withUserPoolId(awsUserPool)).getUsers();
 //        for(UserType u : l){

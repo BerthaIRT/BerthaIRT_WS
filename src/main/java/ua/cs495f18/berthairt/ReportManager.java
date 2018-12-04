@@ -11,11 +11,11 @@ import java.util.Map;
 public class ReportManager extends WSMain{
 
     static String sendSingle(User u, String reportID){
-        Report r = reportMap.get(u.getGroupID()).get(new Integer(reportID) - 1000);
+        Report r = reportMap.get(u.getGroupID()).get(new Integer(reportID));
         String jay = gson.toJson(r);
-        if(u.isAdmin()) return jay.replace(r.getStudentID(), "Hidden");
-        else if(u.getUsername().equals(r.getStudentID())) return jay;
-        else return null;
+        //if(u.isAdmin()) return jay.replace(r.getStudentID(), "Hidden");
+        if(u.isAdmin() || u.getUsername().equals(r.getStudentID())) return jay;
+        else return "";
     }
 
     static String sendAll(User u, String body){
@@ -30,8 +30,8 @@ public class ReportManager extends WSMain{
                 String jay = gson.toJson(r);
                 if(!u.isAdmin() && !u.getUsername().equals(r.getStudentID()))
                     continue;
-                else if(u.isAdmin())
-                    jay = jay.replace(r.getStudentID(), "Hidden");
+//                else if(u.isAdmin())
+//                    jay = jay.replace(r.getStudentID(), "Hidden");
                 jarray.add(jay);
             }
         }
@@ -71,7 +71,7 @@ public class ReportManager extends WSMain{
         Report oldd = reportMap.get(neww.getGroupID()).get(neww.getReportID());
         Group g = groupMap.get(neww.getGroupID());
 
-        if(neww.getStudentID().equals("Hidden")) neww.setStudentID(oldd.getStudentID());
+        //if(neww.getStudentID().equals("Hidden")) neww.setStudentID(oldd.getStudentID());
 
 
         List<Field> changes = new ArrayList<>();

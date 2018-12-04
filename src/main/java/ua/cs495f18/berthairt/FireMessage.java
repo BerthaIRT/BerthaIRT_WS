@@ -61,7 +61,7 @@ public class FireMessage {
 
     public FireMessage withType(MessageType type, Report r, Group g){
         withTitle("REFRESH");
-        withRecipients(g.getAdminList()).withRecipient(r.getStudentID());
+        withRecipients(g.getAdminList()).withRecipient(r.getStudentID()).withRecipient(sender.getUsername());
         withReportID(r.getReportID().toString());
         send();
         withTitle("BerthaIRT");
@@ -147,6 +147,7 @@ public class FireMessage {
     public FireMessage withCardMessage(String cardMessage){this.cardMessage=cardMessage; return this;}
 
     public void send(){
+        System.out.println("[FCM] Recipients: " + recipients);
         if(recipients.size() == 0){
             System.out.println("[FCM] Error: no recipients specified for message!");
             return;
