@@ -63,7 +63,10 @@ public class FireMessage {
         withTitle("REFRESH");
         withRecipients(g.getAdminList()).withRecipient(r.getStudentID()).withRecipient(sender.getUsername());
         withReportID(r.getReportID().toString());
+        System.out.println("[FCM] SENDING REFRESH MESSAGE");
         send();
+
+        recipients = new ArrayList<String>();
         withTitle("BerthaIRT");
 
         if(sender.isAdmin())
