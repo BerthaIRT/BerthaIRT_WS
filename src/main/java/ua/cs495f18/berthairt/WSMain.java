@@ -1,5 +1,8 @@
 package ua.cs495f18.berthairt;
 
+import com.amazonaws.services.cognitoidp.model.AdminDeleteUserRequest;
+import com.amazonaws.services.cognitoidp.model.ListUsersRequest;
+import com.amazonaws.services.cognitoidp.model.UserType;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBScanExpression;
 import com.google.gson.Gson;
 import com.google.gson.JsonParser;
@@ -13,7 +16,7 @@ import java.util.Map;
 
 public class WSMain extends AWSManager{
 
-    static final boolean ENCRYPTION_ENABLED = false;
+    static final boolean ENCRYPTION_ENABLED = true;
 
     static Map<String, User> userMap = new HashMap<>();
     static Map<Integer, Map<Integer, Report>> reportMap = new HashMap<>();
@@ -30,7 +33,7 @@ public class WSMain extends AWSManager{
             String user = ctx.cookieStore("user");
             log(user, "COOKIE USER");
             User u = userMap.get(user);
-            log(gson.toJson(u), "USERMAP");
+            //log(gson.toJson(u), "USERMAP");
             String body = ctx.cookieStore("body");
             ctx.result(authCookieRequest.withIdentifiedRequest(u, body));
         };
@@ -66,10 +69,6 @@ public class WSMain extends AWSManager{
 //            if(!u.getUsername().startsWith("student")) continue;
 //            idp.adminDeleteUser(new AdminDeleteUserRequest().withUserPoolId(awsUserPool).withUsername(u.getUsername()));
 //        }
-//
-//        ua.cs495f18.berthairt.GroupManager.createGroupInDatabase("Test Unit", 999999);
-//        ua.cs495f18.berthairt.GroupManager.addAdminToGroup(999999, "ssinischo@gmail.com");
-//        createNewCognitoUser(999999, "ssinischo@gmail.com", true);
 
         List<Group> groups = db.scan(Group.class, new DynamoDBScanExpression());
         List<Report> reports = db.scan(Report.class, new DynamoDBScanExpression());
