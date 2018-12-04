@@ -12,7 +12,8 @@ public class UserFileManager extends WSMain {
         try {
             FileOutputStream stream = new FileOutputStream(resourcePath + "/emblem/" + u.getGroupID() + ".png");
             stream.write(imgData);
+            return "OK";
         } catch(Exception e ){e.printStackTrace();}
-        return "OK";
+        return null;
     }
 }
