@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class FireMessage {
-    private final String SERVER_KEY = "";//System.getenv("BERTHA_FCM_KEY");
+    public static String SERVER_KEY;
     private final String API_URL_FCM = "https://fcm.googleapis.com/fcm/send";
     
     private JsonObject payload;
