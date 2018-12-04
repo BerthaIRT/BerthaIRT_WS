@@ -101,7 +101,7 @@ public class WSMain extends AWSManager{
 
         Integer port = Integer.valueOf(System.getenv("BERTHA_PORT"));
         Javalin app = Javalin.create();
-        //app.enableStaticFiles("/userfiles");
+        app.enableStaticFiles("/userfiles");
         app.start(port);
         addPaths(app);
 
