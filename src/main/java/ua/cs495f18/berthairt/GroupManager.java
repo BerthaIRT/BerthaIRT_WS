@@ -53,6 +53,13 @@ public class GroupManager extends WSMain{
         return "OK";
     }
 
+    public static String removeAdminFromGroup(User u, String body){
+        Group g = groupMap.get(u.getGroupID());
+        g.getAdminList().remove(u.getUsername());
+        db.save(g);
+        return "OK";
+    }
+
     public static void addStudentToGroup(Context ctx){
         Integer groupID = new Integer(ctx.body());
         Group g = groupMap.get(groupID);
