@@ -30,7 +30,7 @@ buildscript {
 apply plugin: "io.spring.dependency-management"
 
 // Define the main class for the application
-mainClassName = 'ua.cs459f18.berthairt.ua.cs495f18.berthairt.WSMain'
+mainClassName = 'ua.cs495f18.berthairt.WSMain'
 
 dependencyManagement {
     imports {
