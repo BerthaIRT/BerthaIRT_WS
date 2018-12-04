@@ -1,6 +1,6 @@
+package ua.cs495f18.berthairt;
+
 import com.amazonaws.services.dynamodbv2.datamodeling.*;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonParser;
 
 import javax.crypto.Cipher;
 import java.util.ArrayList;
@@ -15,9 +15,8 @@ public class User {
 
     private String fcmToken;
 
-    private List<String> alerts;
+    private List<Message> alerts;
 
-    private String sub;
     private Cipher encrypter;
     private Cipher decrypter;
 
@@ -25,9 +24,8 @@ public class User {
 
     }
 
-    public User(String username, String sub, Integer groupID, String fcmToken, boolean isAdmin){
+    public User(String username, Integer groupID, String fcmToken, boolean isAdmin){
         this.username = username;
-        this.sub = sub;
         this.groupID = groupID;
         this.fcmToken = fcmToken;
         this.alerts = new ArrayList<>();
@@ -60,16 +58,9 @@ public class User {
         this.fcmToken = fcmToken;
     }
 
-    public List<String> getAlerts() { return alerts; }
+    public List<Message> getAlerts() { return alerts; }
 
-    public void setAlerts(List<String> alerts) { this.alerts = alerts; }
-
-    @DynamoDBIgnore
-    public String getSub() { return sub; }
-
-    public void setSub(String sub) {
-        this.sub = sub;
-    }
+    public void setAlerts(List<Message> alerts) { this.alerts = alerts; }
 
     @DynamoDBIgnore
     public Cipher getEncrypter() {

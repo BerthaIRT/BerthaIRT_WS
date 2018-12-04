@@ -1,3 +1,5 @@
+package ua.cs495f18.berthairt;
+
 import com.amazonaws.services.dynamodbv2.datamodeling.*;
 
 import java.util.ArrayList;
@@ -6,21 +8,21 @@ import java.util.List;
 
 @DynamoDBTable(tableName="reports")
 public class Report {
-     private Integer reportID = 0;
-     private Integer groupID = 0;
-     private String studentID = "";
-     private Long creationDate = 0L;
-     private Long incidentDate = 0L;
-     private Integer threat = 0;
-     private String status = "";
-     private String location = "";
-     private String description = "";
-     private List<String> categories;
-     private List<String> tags;
-     private List<String> assignedTo;
-     private List<Message> messages;
-     private List<Message> logs;
-     private List<Message> notes;
+     Integer reportID = 0;
+     Integer groupID = 0;
+     String studentID = "";
+     Long creationDate = 0L;
+     Long incidentDate = 0L;
+     Integer threat = 0;
+     String status = "";
+     String location = "";
+     String description = "";
+     List<String> categories;
+     List<String> tags;
+     List<String> assignedTo;
+     List<Message> messages;
+     List<Message> logs;
+     List<Message> notes;
 
     public Report(){
         categories = new ArrayList<>();
@@ -36,9 +38,6 @@ public class Report {
         return reportID;
     }
 
-    public String getKeyString(){
-        return groupID.toString() + "-" + reportID.toString();
-    }
     public void setReportID(Integer reportID) {
         this.reportID = reportID;
     }

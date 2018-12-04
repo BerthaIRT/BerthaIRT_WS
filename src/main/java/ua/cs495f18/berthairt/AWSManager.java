@@ -1,3 +1,5 @@
+package ua.cs495f18.berthairt;
+
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.regions.Regions;
@@ -6,8 +8,8 @@ import com.amazonaws.services.cognitoidp.AWSCognitoIdentityProviderClientBuilder
 import com.amazonaws.services.cognitoidp.model.*;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
+import io.javalin.Context;
 
-import java.io.Serializable;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
@@ -85,5 +87,19 @@ public class AWSManager{
         );
 
         return username;
+    }
+
+    public static void forgotCognitoPassword(Context ctx) {
+        try {
+            idp.adminResetUserPassword(new AdminResetUserPasswordRequest()
+            .withUserPoolId(awsUserPool)
+            .withUsername(ctx.body()));
+        } catch (NotAuthorizedException e) {
+            idp.adminCreateUser(new AdminCreateUserRequest()
+                .withUserPoolId(awsUserPool)
+                .withUsername(ctx.body())
+                .withMessageAction(MessageActionType.RESEND));
+        }
+        ctx.result("OK");
     }
 }

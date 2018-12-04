@@ -1,3 +1,4 @@
+package ua.cs495f18.berthairt;
 
 import com.google.gson.JsonObject;
 

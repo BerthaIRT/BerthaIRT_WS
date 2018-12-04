@@ -1,18 +1,15 @@
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBScanExpression;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+package ua.cs495f18.berthairt;
+
 import com.google.gson.JsonArray;
-import io.javalin.Context;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class ReportManager extends WSMain{
 
     static String sendSingle(User u, String reportID){
-        Report r = reportMap.get(u.getGroupID()).get(new Integer(reportID));
+        Report r = reportMap.get(u.getGroupID()).get(new Integer(reportID) - 1000);
         String jay = gson.toJson(r);
         if(u.isAdmin()) return jay.replace(r.getStudentID(), "Hidden");
         else if(u.getUsername().equals(r.getStudentID())) return jay;
@@ -22,16 +19,19 @@ public class ReportManager extends WSMain{
     static String sendAll(User u, String body){
 //        Map<String, AttributeValue> attribs = new HashMap<>();
 //        attribs.put(":id", new AttributeValue().withN(u.getGroupID().toString()));
-//        List<Report> query = db.scan(Report.class, new DynamoDBScanExpression().withFilterExpression("groupID = :id").withExpressionAttributeValues(attribs));
+//        List<ua.cs495f18.berthairt.Report> query = db.scan(ua.cs495f18.berthairt.Report.class, new DynamoDBScanExpression().withFilterExpression("groupID = :id").withExpressionAttributeValues(attribs));
 
         JsonArray jarray = new JsonArray();
-        for(Report r : reportMap.get(u.getGroupID())){
-            String jay = gson.toJson(r);
-            if(!u.isAdmin() && !u.getUsername().equals(r.getStudentID()))
-                continue;
-            else if(u.isAdmin())
-                jay = jay.replace(r.getStudentID(), "Hidden");
-            jarray.add(jay);
+        List<Report> l = reportMap.get(u.getGroupID());
+        if(l != null){
+            for(Report r : l){
+                String jay = gson.toJson(r);
+                if(!u.isAdmin() && !u.getUsername().equals(r.getStudentID()))
+                    continue;
+                else if(u.isAdmin())
+                    jay = jay.replace(r.getStudentID(), "Hidden");
+                jarray.add(jay);
+            }
         }
         return jarray.toString();
     }
@@ -46,7 +46,7 @@ public class ReportManager extends WSMain{
         Group g = groupMap.get(r.getGroupID());
         Integer i = g.getReportCount();
         g.setReportCount(i+1);
-        r.setReportID(i);
+        r.setReportID(i + 1000);
         r.addLog(new Message(u, "Report created"));
 
         List<Report> groupReports = reportMap.get(r.getGroupID());
@@ -60,13 +60,13 @@ public class ReportManager extends WSMain{
         db.save(r);
         db.save(g);
 
-        new FireMessage(u).withType(FireMessage.MessageType.NEW_REPORT, r, g);
+        new FireMessage(u).withType(FireMessage.MessageType.NEW_REPORT, r, g).send();
         return gson.toJson(r);
     }
 
     static String updateReport(User u, String body){
         Report neww = gson.fromJson(body, Report.class);
-        Report oldd = reportMap.get(neww.getGroupID()).get(neww.getReportID());
+        Report oldd = reportMap.get(neww.getGroupID()).get(neww.getReportID()-1000);
         Group g = groupMap.get(neww.getGroupID());
 
         if(neww.getStudentID().equals("Hidden")) neww.setStudentID(oldd.getStudentID());

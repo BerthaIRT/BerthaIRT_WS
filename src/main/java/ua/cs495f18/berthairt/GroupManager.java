@@ -1,7 +1,8 @@
+package ua.cs495f18.berthairt;
+
 import com.google.gson.JsonObject;
 import io.javalin.Context;
 
-import java.util.ArrayList;
 import java.util.Random;
 
 public class GroupManager extends WSMain{
@@ -28,7 +29,7 @@ public class GroupManager extends WSMain{
         ctx.result(createNewCognitoUser(newGroupID, firstAdmin, true));
     }
 
-    private static Integer createGroupInDatabase(String groupName, Integer newGroupID){
+    static Integer createGroupInDatabase(String groupName, Integer newGroupID){
         if(newGroupID == null) newGroupID = new Random().nextInt(1000000);
         if(newGroupID < 100000 || db.load(Group.class, newGroupID) != null) return createGroupInDatabase(groupName, null);
         Group g = new Group();
@@ -50,7 +51,7 @@ public class GroupManager extends WSMain{
         Group g = groupMap.get(groupID);
         Integer newStudentID = 1000 + g.getStudentCount();
         String newStudentUsername = ("student-" + groupID + "-" + newStudentID);
-        g.setStudentCount(newStudentID-1000);
+        g.setStudentCount(newStudentID-999);
         db.save(g);
         ctx.result(createNewCognitoUser(groupID, newStudentUsername, false));
     }

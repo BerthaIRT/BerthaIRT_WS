@@ -1,7 +1,8 @@
+package ua.cs495f18.berthairt;
+
 import com.amazonaws.services.cognitoidp.model.AdminGetUserRequest;
 import com.amazonaws.services.cognitoidp.model.AttributeType;
 import com.auth0.jwk.Jwk;
-import com.auth0.jwk.JwkException;
 import com.auth0.jwk.UrlJwkProvider;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
@@ -53,37 +54,44 @@ public class AuthManager extends WSMain{
             log("Allowing auth exception", "AUTH");
             return;
         }
-
+        String username;
+        Integer groupID;
+        boolean isAdmin;
         log("Decoding JWT", "AUTH");
         DecodedJWT jwt = decodeJWT(ctx.header("Authentication"));
         if(jwt == null) {
             log("Warning: no JWT for request", "AUTH");
-            return;
+            username = ctx.header("user");
+            if(username == null) return;
+            groupID = Integer.valueOf("group");
+            isAdmin = !username.startsWith("student");
         }
-        String username = jwt.getClaim("cognito:username").asString();
-        String sub = jwt.getClaim("sub").asString();
-        List<String> l = jwt.getClaim("cognito:groups").asList(String.class);
-        boolean isAdmin = l.contains("Administrators");
-        if(ctx.path().endsWith("/admin") && !isAdmin){
-            ctx.status(401);
-            return;
+        else {
+            username = jwt.getClaim("cognito:username").asString();
+            List<String> l = jwt.getClaim("cognito:groups").asList(String.class);
+            isAdmin = l.contains("Administrators");
+            groupID = Integer.valueOf(jwt.getClaim("custom:groupID").asString());
         }
 
         User u = userMap.get(username);
-        if(u != null && u.getSub() != null && u.getSub().equals(sub)){
+        if(u != null && !ctx.path().equals("/app/keyexchange")){
             log("User " + username + " has an active session.", "AUTH");
-            ctx.cookieStore("user", u);
+            ctx.cookieStore("user", u.getUsername());
             ctx.cookieStore("body", decryptRequestBody(u, ctx.body()));
             return;
         }
-        Integer groupID = Integer.valueOf(jwt.getClaim("custom:groupID").asString());
         String fcmToken = ctx.body();
         if(u == null || !u.getFcmToken().equals(ctx.body())) {
-            u = new User(username, sub, groupID, fcmToken, isAdmin);
+            u = new User(username, groupID, fcmToken, isAdmin);
             db.save(u);
-            log("User " + username + " has been added to the database.", "AUTH");
+            log("User " + username + " has been saved to the database.", "AUTH");
         }
         log("User " + username + " is starting a new session.", "AUTH");
+        if(!ENCRYPTION_ENABLED){
+            userMap.put(username, u);
+            if(ctx.path().equals("/app/keyexchange")) ctx.result("OK");
+            return;
+        }
 
         String rsaEncryptedAESKey = "";
         String rsaEncryptedIvParams = "";
@@ -130,15 +138,16 @@ public class AuthManager extends WSMain{
     }
 
     public static String decryptRequestBody(User u, String hexEncoded){
-        byte[] decoded = Util.fromHexString(hexEncoded);
+        if(!ENCRYPTION_ENABLED) return hexEncoded;
         String decrypted = null;
+        byte[] decoded = Util.fromHexString(hexEncoded);
         try {
             decrypted = new String(u.getDecrypter().doFinal(decoded));
         } catch (Exception e) {
             e.printStackTrace();
         }
         if(decrypted != null){
-            log("Decrypted for user: " + u.getUsername() + "\n      " + decrypted, "AUTH");
+            log("Decrypted for user: " + u.getUsername() + "\n      " + decrypted, "REQUEST");
             return decrypted;
         }
         log("ERROR: request failed to decrypt! (is cognito token still valid?) = " + u.getUsername(), "AUTH");
@@ -146,18 +155,22 @@ public class AuthManager extends WSMain{
     }
 
     public static void encryptResponseBody(Context ctx){
-        if(ctx.resultString() == null) log("WARNING: nothing to encrypt!", "AUTH");
-        User u = ctx.cookieStore("user");
-        if(u == null){
-            return;
-        }
-        log("Encrypting for user: " + u.getUsername() + "\n      " + ctx.resultString(), "AUTH");
+        String res = ctx.resultString();
+            if(ENCRYPTION_ENABLED && res == null){
+                log("WARNING: nothing to encrypt!", "AUTH");
+                return;
+            }
+            User u = WSMain.userMap.get((String) ctx.cookieStore("user"));
+            if(ENCRYPTION_ENABLED && u == null){
+                log("WARNING: no user to encrypt for!", "AUTH");
+                return;
+            }
+        log(res, "RESPONSE");
+        if(!ENCRYPTION_ENABLED) return;
         try {
-            ctx.result(Util.asHex(u.getEncrypter().doFinal(ctx.resultString().getBytes())));
-            ctx.status(200);
-        } catch (IllegalBlockSizeException e) {
-            e.printStackTrace();
-        } catch (BadPaddingException e) {
+            res = Util.asHex(u.getEncrypter().doFinal(res.getBytes()));
+            ctx.result(res);
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

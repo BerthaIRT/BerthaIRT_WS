@@ -1,3 +1,5 @@
+package ua.cs495f18.berthairt;
+
 import com.amazonaws.services.dynamodbv2.datamodeling.*;
 import com.google.common.reflect.TypeToken;
 

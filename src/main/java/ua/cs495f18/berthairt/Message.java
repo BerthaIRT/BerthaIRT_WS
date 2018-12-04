@@ -1,3 +1,5 @@
+package ua.cs495f18.berthairt;
+
 import com.amazonaws.services.dynamodbv2.datamodeling.*;
 
 @DynamoDBDocument
@@ -6,6 +8,7 @@ public class Message {
     private Long messageTimestamp = 0L;
     private String messageSubject = "";
     private String messageBody = "";
+    private Integer reportID = 0;
 
     public Message(){}
 
@@ -13,6 +16,12 @@ public class Message {
         messageTimestamp = System.currentTimeMillis();
         messageSubject = u.getUsername();
         messageBody = body;
+    }
+    public Message(User u, String body, Integer reportID){
+        messageTimestamp = System.currentTimeMillis();
+        messageSubject = u.getUsername();
+        messageBody = body;
+        this.reportID = reportID;
     }
 
     @DynamoDBAttribute(attributeName = "messageTimestamp")
@@ -40,6 +49,15 @@ public class Message {
 
     public void setMessageBody(String messageBody) {
         this.messageBody = messageBody;
+    }
+
+    @DynamoDBAttribute(attributeName = "reportID")
+    public Integer getReportID() {
+        return reportID;
+    }
+
+    public void setReportID(Integer reportID) {
+        this.reportID = reportID;
     }
 }
 

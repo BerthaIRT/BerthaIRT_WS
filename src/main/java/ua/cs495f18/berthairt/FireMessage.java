@@ -1,3 +1,5 @@
+package ua.cs495f18.berthairt;
+
 import com.google.gson.*;
 
 import java.io.BufferedReader;
@@ -7,18 +9,18 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class FireMessage {
-    private final String SERVER_KEY = System.getenv("BERTHA_FCM_KEY");
+    private final String SERVER_KEY = "AAAA_TihoIY:APA91bGvMrudmh6Vb5NUaSEbXH5CCkdjLMgKv3JgxV0ak0ZffVE0KdcRw3tsMk5piN0zBI0YOna6Sz0vlRDTVnn-9Tyl2uC78NgoaGJoOLGXXQuGBGO6n0eQK6Oqtm8qb74QtBjQV6Su";//System.getenv("BERTHA_FCM_KEY");
     private final String API_URL_FCM = "https://fcm.googleapis.com/fcm/send";
     
     private JsonObject payload;
     private List<String> recipients;
-    private String sender;
+    private User sender;
+    private String cardMessage;
 
     enum MessageType{
-        //Messages which display a notification
+        REFRESH,
         NEW_REPORT,
         REPORT_OPENED,
         REPORT_MESSAGE,
@@ -54,38 +56,42 @@ public class FireMessage {
     public FireMessage(User u){
         recipients = new ArrayList<>();
         payload = new JsonObject();
-        sender = u.getUsername();
+        sender = u;
     }
 
     public FireMessage withType(MessageType type, Report r, Group g){
+        withTitle("REFRESH");
+        withRecipients(g.getAdminList()).withRecipient(r.getStudentID());
+        withReportID(r.getReportID().toString());
+        send();
+
+        if(sender.isAdmin())
+            withClickAction("ADMIN_REPORT");
+        else withClickAction("STUDENT_REPORT");
+
         switch (type){
             case NEW_REPORT:
-                return this.withBody("A new report has been submitted")
-                        .withClickAction("ADMIN_REPORT")
-                        .withReportID(r.getReportID().toString())
-                        .withRecipients(g.getAdminList());
-
+                withBody("A new report has been submitted");
+                withCardMessage("Report");
+                withRecipients(g.getAdminList());
+                break;
             case REPORT_OPENED:
-                return this.withBody("A report has been opened")
-                        .withClickAction("ADMIN_REPORT")
-                        .withReportID(r.getReportID().toString())
-                        .withRecipients(g.getAdminList());
-
+                withBody("A report has been opened");
+                withCardMessage("Report");
+                withRecipients(g.getAdminList());
+                break;
             case ASSIGNED_REMOVED:
-                return this.withBody("Assignees have been updated")
-                        .withClickAction("ADMIN_REPORT")
-                        .withReportID(r.getReportID().toString());
-
+                withBody("Assignees have been updated");
+                withCardMessage("Updated Assignees");
+                break;
             case ASSIGNED_TO_ME:
-                return this.withBody("You have been assigned to a report")
-                        .withClickAction("ADMIN_REPORT")
-                        .withReportID(r.getReportID().toString());
-
+                withBody("You have been assigned to a report");
+                withCardMessage("Assigned to Me");
+                break;
             case REPORT_MESSAGE:
-                if(WSMain.userMap.get(sender).isAdmin()){
+                withCardMessage("Message");
+                if(sender.isAdmin()){
                     withBody("An administrator has sent you a message!");
-                    withRecipient(r.getStudentID());
-                    withClickAction("STUDENT_REPORT");
                 }
                 else{
                     if(r.getAssignedTo().size() == 0) {
@@ -96,11 +102,12 @@ public class FireMessage {
                         withRecipients(r.getAssignedTo());
                         withBody("A report you are assigned to has a new student message");
                     }
-                    withClickAction("ADMIN_REPORT");
                 }
-                return this.withReportID(r.getReportID().toString());
+                withReportID(r.getReportID().toString());
+                break;
 
             case REPORT_EDITED:
+                withCardMessage("New Update");
                 if(r.getAssignedTo().size() == 0) {
                     withRecipients(g.getAdminList());
                     withBody("An open report has been updated.");
@@ -109,10 +116,10 @@ public class FireMessage {
                     withRecipients(r.getAssignedTo());
                     withBody("A report you are assigned to has been updated");
                 }
-                return this.withClickAction("ADMIN_REPORT")
-                        .withReportID(r.getReportID().toString());
+                break;
 
             case REPORT_NOTES:
+                withCardMessage("New Notes");
                 if(r.getAssignedTo().size() == 0) {
                     withRecipients(g.getAdminList());
                     withBody("An administrator left a note on an open report");
@@ -121,10 +128,8 @@ public class FireMessage {
                     withRecipients(r.getAssignedTo());
                     withBody("An administrator left a note on a report you are assigned to");
                 }
-                return this.withClickAction("ADMIN_REPORT")
-                        .withReportID(r.getReportID().toString());
         }
-        return null;
+        return this;
     }
 
     public FireMessage withTitle(String title){ payload.addProperty("title", title); return this;}
@@ -133,11 +138,12 @@ public class FireMessage {
     public FireMessage withReportID(String reportID){ payload.addProperty("reportID", reportID); return this;}
     public FireMessage withExtras(String extras){ payload.addProperty("extras",  extras); return this;}
     public FireMessage withRecipients(List<String> recipients){
-        this.recipients = recipients;
-        this.recipients.removeIf((a)->a.equals(sender));
+        this.recipients = new ArrayList<>(recipients);
+        this.recipients.removeIf((a)->a.equals(sender.getUsername()));
         return this;
     }
-    public FireMessage withRecipient(String recipient){recipients.add(WSMain.userMap.get(recipient).getFcmToken()); return this;}
+    public FireMessage withRecipient(String recipient){recipients.add(recipient); return this;}
+    public FireMessage withCardMessage(String cardMessage){this.cardMessage=cardMessage; return this;}
 
     public void send(){
         if(recipients.size() == 0){
@@ -146,10 +152,12 @@ public class FireMessage {
         }
         JsonArray tokens = new JsonArray();
         for(String s : recipients){
-            User u = WSMain.userMap.get(s);
-            u.getAlerts().add(payload.toString());
-            WSMain.db.save(u);
-            tokens.add(u.getFcmToken());
+            User rec = WSMain.userMap.get(s);
+            if(cardMessage != null) {
+                rec.getAlerts().add(new Message(sender, cardMessage, payload.get("reportID").getAsInt()));
+                WSMain.db.save(rec);
+            }
+            tokens.add(rec.getFcmToken());
         }
         try {
             JsonObject root = new JsonObject();
@@ -164,6 +172,7 @@ public class FireMessage {
             conn.setDoOutput(true);
             conn.setRequestMethod("POST");
 
+            System.out.println(SERVER_KEY);
             conn.setRequestProperty("Content-Type", "application/json");
             conn.setRequestProperty("Accept", "application/json");
             conn.setRequestProperty("Authorization", "key=" + SERVER_KEY);
@@ -180,7 +189,7 @@ public class FireMessage {
                 line = br.readLine();
             }
             JsonObject result = new JsonParser().parse(b.toString()).getAsJsonObject();
-            System.out.println("[FCM] Message delivered to " + result.get("success").getAsString() + " devices with " + result.get("failure").getAsString());
+            System.out.println("Message delivered to " + result.get("success").getAsString() + " devices with " + result.get("failure").getAsString() + " failures.");
         }catch (Exception e){e.printStackTrace();}
     }
 }
