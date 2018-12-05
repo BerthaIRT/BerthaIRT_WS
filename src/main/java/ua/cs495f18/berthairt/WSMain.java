@@ -16,7 +16,7 @@ import java.util.Map;
 
 public class WSMain extends AWSManager{
 
-    static final boolean ENCRYPTION_ENABLED = true;
+    static final boolean ENCRYPTION_ENABLED = false;
 
     static Map<String, User> userMap = new HashMap<>();
     static Map<Integer, Map<Integer, Report>> reportMap = new HashMap<>();
@@ -101,7 +101,7 @@ public class WSMain extends AWSManager{
 
         Integer port = Integer.valueOf(System.getenv("BERTHA_PORT"));
         Javalin app = Javalin.create();
-        app.enableStaticFiles("/userfiles");
+        app.enableStaticFiles("/userfiles").enableDebugLogging();
         app.start(port);
         addPaths(app);
 
@@ -110,7 +110,7 @@ public class WSMain extends AWSManager{
             AuthManager.storeSecureCookies(ctx);
         });
 
-        app.after("/*", ctx->{
+        app.after("/app/*", ctx->{
             AuthManager.encryptResponseBody(ctx);
         });
     }

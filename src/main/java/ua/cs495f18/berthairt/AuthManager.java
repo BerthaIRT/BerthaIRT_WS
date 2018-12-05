@@ -168,9 +168,9 @@ public class AuthManager extends WSMain{
         log(res, "RESPONSE");
         if(!ENCRYPTION_ENABLED) return;
         try {
-            res = Util.asHex(u.getEncrypter().doFinal(res.getBytes()));
-            ctx.result(res);
+            ctx.result(Util.asHex(u.getEncrypter().doFinal(res.getBytes())));
         } catch (Exception e) {
+            log("FUCK FUCK FUCK", "encryption bullshit");
             e.printStackTrace();
         }
     }
