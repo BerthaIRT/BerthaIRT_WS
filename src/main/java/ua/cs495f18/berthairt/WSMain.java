@@ -124,7 +124,8 @@ public class WSMain extends AWSManager{
 
         app.before("/app/*", ctx->{
             log(ctx.path(), "PATH");
-            if(ctx.path().endsWith("emblem")) return;
+            if(ctx.path().endsWith("emblem") || ctx.path().endsWith("media"))
+                return;
             AuthManager.storeSecureCookies(ctx);
         });
 
