@@ -57,9 +57,9 @@ public class GroupManager extends WSMain{
 
     public static String removeAdminFromGroup(User u, String body){
         Group g = groupMap.get(u.getGroupID());
-        g.getAdminList().remove(u.getUsername());
-        userMap.remove(u.getUsername());
-        deleteUser(u.getUsername());
+        g.getAdminList().remove(body);
+        userMap.remove(body);
+        deleteUser(body);
         db.save(g);
         return "OK";
     }
