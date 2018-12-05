@@ -65,7 +65,7 @@ public class FireMessage {
         withReportID(r.getReportID().toString());
         send();
 
-        recipients = new ArrayList<String>();
+        recipients = new ArrayList<>();
         withTitle("BerthaIRT");
 
         //make click action Admin by default
@@ -92,6 +92,7 @@ public class FireMessage {
                 break;
             case REPORT_MESSAGE:
                 withCardMessage("Message");
+                withExtras("message");
                 if(sender.isAdmin()){
                     //change the click action to student report
                     withClickAction("STUDENT_REPORT");
@@ -107,7 +108,6 @@ public class FireMessage {
                         withBody("A report you are assigned to has a new student message");
                     }
                 }
-                //withExtras("messages");
                 break;
 
             case REPORT_EDITED:
