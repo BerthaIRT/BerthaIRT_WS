@@ -1,9 +1,7 @@
 package ua.cs495f18.berthairt;
 
-import com.amazonaws.services.cognitoidp.model.AdminDeleteUserRequest;
-import com.amazonaws.services.cognitoidp.model.ListUsersRequest;
-import com.amazonaws.services.cognitoidp.model.UserType;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBScanExpression;
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.google.gson.Gson;
 import com.google.gson.JsonParser;
 import io.javalin.Handler;
@@ -16,7 +14,7 @@ import java.util.Map;
 
 public class WSMain extends AWSManager{
 
-    static final boolean ENCRYPTION_ENABLED = false;
+    static final boolean ENCRYPTION_ENABLED = true;
 
     static Map<String, User> userMap = new HashMap<>();
     static Map<Integer, Map<Integer, Report>> reportMap = new HashMap<>();
@@ -56,8 +54,18 @@ public class WSMain extends AWSManager{
         app.put("*/group/addadmin", requestIdentifier(GroupManager::addAdminToGroup));
         app.put("*/group/removeadmin", requestIdentifier(GroupManager::removeAdminFromGroup));
         app.put("*/group/togglestatus", requestIdentifier(GroupManager::toggleStatus));
-        app.put("*/group/emblem", requestIdentifier(UserFileManager::downloadEmblem));
+        app.put("*/group/changename", requestIdentifier(GroupManager::newInstitutionName));
         app.put("*/forgotpassword", AWSManager::forgotCognitoPassword);
+
+        app.put("*/group/emblem", (ctx)->{
+            try {
+                DecodedJWT jwt = AuthManager.decodeJWT(ctx.header("Authentication"));
+                Integer group = Integer.valueOf(jwt.getClaim("custom:groupID").asString());
+                if (jwt.getClaim("cognito:username").asString().startsWith("student")) ctx.status(401);
+                else
+                    ctx.result(UserFileManager.downloadEmblem(group, ctx.body()));
+            } catch (Exception e){ctx.status(401);}
+        });
     }
 
     public static void main(String[] args){
@@ -101,12 +109,13 @@ public class WSMain extends AWSManager{
 
         Integer port = Integer.valueOf(System.getenv("BERTHA_PORT"));
         Javalin app = Javalin.create();
-        app.enableStaticFiles("/userfiles").enableDebugLogging();
+        app.enableStaticFiles("/userfiles");
         app.start(port);
         addPaths(app);
 
         app.before("/app/*", ctx->{
             log(ctx.path(), "PATH");
+            if(ctx.path().endsWith("emblem")) return;
             AuthManager.storeSecureCookies(ctx);
         });
 

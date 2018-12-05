@@ -1,5 +1,6 @@
 package ua.cs495f18.berthairt;
 
+import com.amazonaws.services.cognitoidp.model.AdminDeleteUserRequest;
 import com.google.gson.JsonObject;
 import io.javalin.Context;
 
@@ -48,7 +49,7 @@ public class GroupManager extends WSMain{
 
     public static String addAdminToGroup(User u, String body){
         Group g = groupMap.get(u.getGroupID());
-        g.getAdminList().add(u.getUsername());
+        g.getAdminList().add(body);
         db.save(g);
         return "OK";
     }
@@ -56,6 +57,8 @@ public class GroupManager extends WSMain{
     public static String removeAdminFromGroup(User u, String body){
         Group g = groupMap.get(u.getGroupID());
         g.getAdminList().remove(u.getUsername());
+        userMap.remove(u.getUsername());
+        deleteUser(u.getUsername());
         db.save(g);
         return "OK";
     }
@@ -77,5 +80,12 @@ public class GroupManager extends WSMain{
         g.setGroupStatus(status);
         db.save(g);
         return status;
+    }
+
+    public static String newInstitutionName(User u, String body) {
+        Group g = groupMap.get(u.getGroupID());
+        g.setGroupName(body);
+        db.save(g);
+        return body;
     }
 }

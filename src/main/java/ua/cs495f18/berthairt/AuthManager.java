@@ -170,7 +170,6 @@ public class AuthManager extends WSMain{
         try {
             ctx.result(Util.asHex(u.getEncrypter().doFinal(res.getBytes())));
         } catch (Exception e) {
-            log("FUCK FUCK FUCK", "encryption bullshit");
             e.printStackTrace();
         }
     }

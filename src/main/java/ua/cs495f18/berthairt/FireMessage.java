@@ -61,9 +61,8 @@ public class FireMessage {
 
     public FireMessage withType(MessageType type, Report r, Group g){
         withTitle("REFRESH");
-        withRecipients(g.getAdminList()).withRecipient(r.getStudentID()).withRecipient(sender.getUsername());
+        withRecipients(g.getAdminList()).withRecipient(r.getStudentID());
         withReportID(r.getReportID().toString());
-        System.out.println("[FCM] SENDING REFRESH MESSAGE");
         send();
 
         recipients = new ArrayList<String>();
@@ -75,12 +74,12 @@ public class FireMessage {
         switch (type){
             case NEW_REPORT:
                 withBody("A new report has been submitted");
-                withCardMessage("Report");
+                withCardMessage("Report Submitted");
                 withRecipients(g.getAdminList());
                 break;
             case REPORT_OPENED:
                 withBody("A report has been opened");
-                withCardMessage("Report");
+                withCardMessage("Report Opened");
                 withRecipients(g.getAdminList());
                 break;
             case ASSIGNED_REMOVED:
@@ -144,7 +143,6 @@ public class FireMessage {
     public FireMessage withExtras(String extras){ payload.addProperty("extras",  extras); return this;}
     public FireMessage withRecipients(List<String> recipients){
         this.recipients = new ArrayList<>(recipients);
-        this.recipients.removeIf((a)->a.equals(sender.getUsername()));
         return this;
     }
     public FireMessage withRecipient(String recipient){recipients.add(recipient); return this;}
