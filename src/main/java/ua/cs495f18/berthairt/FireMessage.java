@@ -31,28 +31,6 @@ public class FireMessage {
         NEW_ADMIN,
     }
 
-//    {
-//        "message":{
-//            "token":"...",
-//            "notification":{
-//                "title": string,
-//                "body": string,
-//                "icon": string,
-//                "color": string,
-//                "sound": string,
-//                "tag": string,
-//                "click_action": string,
-//                "body_loc_key": string,
-//                "body_loc_args": [string],
-//                "title_loc_key": string,
-//                "title_loc_args": [string]
-//            },
-//            "data" : {
-//                "yourKey" : "yourValue"
-//            }
-//        }
-//    }
-
     public FireMessage(User u){
         recipients = new ArrayList<>();
         payload = new JsonObject();
@@ -94,7 +72,7 @@ public class FireMessage {
                 withCardMessage("Message");
                 withExtras("message");
                 if(sender.isAdmin()){
-                    System.out.println("Message is from Admin");
+                    withRecipient(r.studentID);
                     //change the click action to student report
                     withClickAction("STUDENT_REPORT");
                     withBody("An administrator has sent you a message!");

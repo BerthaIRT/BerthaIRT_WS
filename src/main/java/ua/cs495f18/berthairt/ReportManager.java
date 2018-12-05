@@ -71,9 +71,6 @@ public class ReportManager extends WSMain{
         Report oldd = reportMap.get(neww.getGroupID()).get(neww.getReportID());
         Group g = groupMap.get(neww.getGroupID());
 
-        //if(neww.getStudentID().equals("Hidden")) neww.setStudentID(oldd.getStudentID());
-
-
         List<Field> changes = new ArrayList<>();
         try {
             for (Field f : Report.class.getDeclaredFields()) {
@@ -141,7 +138,8 @@ public class ReportManager extends WSMain{
                     }
                     break;
             }
-            if(combineChangesMessage != null) combineChangesMessage.send();
+            if(combineChangesMessage != null)
+                combineChangesMessage.send();
         }
         reportMap.get(neww.getGroupID()).put(neww.getReportID(), neww);
         db.save(neww);
