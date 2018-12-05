@@ -102,4 +102,9 @@ public class AWSManager{
         }
         ctx.result("OK");
     }
+
+    public static void deleteUser(String u){
+        idp.adminDeleteUser(new AdminDeleteUserRequest().withUserPoolId(awsUserPool).withUsername(u));
+    }
+
 }
