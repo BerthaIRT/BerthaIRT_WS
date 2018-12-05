@@ -23,6 +23,7 @@ public class Report {
      List<Message> messages;
      List<Message> logs;
      List<Message> notes;
+     private Integer mediaCount;
 
     public Report(){
         categories = new ArrayList<>();
@@ -153,5 +154,13 @@ public class Report {
 
     public void addLog(Message l){
         logs.add(l);
+    }
+
+    public Integer getMediaCount() {
+        return mediaCount;
+    }
+
+    public void setMediaCount(Integer mediaCount) {
+        this.mediaCount = mediaCount;
     }
 }

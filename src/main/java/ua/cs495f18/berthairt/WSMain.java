@@ -66,6 +66,16 @@ public class WSMain extends AWSManager{
                     ctx.result(UserFileManager.downloadEmblem(group, ctx.body()));
             } catch (Exception e){ctx.status(401);}
         });
+
+        app.put("*/report/media", (ctx)-> {
+            try {
+                DecodedJWT jwt = AuthManager.decodeJWT(ctx.header("Authentication"));
+                //Integer group = Integer.valueOf(jwt.getClaim("custom:groupID").asString());
+                User u = userMap.get(jwt.getClaim("cognito:username").asString());
+                ctx.result(UserFileManager.downloadMedia(u, ctx.body()));
+            } catch (Exception e){
+                ctx.status(401);}
+        });
     }
 
     public static void main(String[] args){

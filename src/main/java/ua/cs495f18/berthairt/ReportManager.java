@@ -111,14 +111,18 @@ public class ReportManager extends WSMain{
                     break;
                 case "categories":
                     li = Util.listSubtraction(oldd.getCategories(), neww.getCategories());
-                    if (li.get(0).size() > 0) neww.addLog(new Message(u, "Removed categories " + li.get(0)));
-                    if (li.get(1).size() > 0) neww.addLog(new Message(u, "Added categories " + li.get(1)));
+                    if (li.get(0).size() > 0)
+                        neww.addLog(new Message(u, "Removed categories " + li.get(0)));
+                    if (li.get(1).size() > 0)
+                        neww.addLog(new Message(u, "Added categories " + li.get(1)));
                     combineChangesMessage = new FireMessage(u).withType(FireMessage.MessageType.REPORT_EDITED, neww, g);
                     break;
                 case "tags":
                     li = Util.listSubtraction(oldd.getTags(), neww.getTags());
-                    if (li.get(0).size() > 0) neww.addLog(new Message(u, "Removed tags " + li.get(0)));
-                    if (li.get(1).size() > 0) neww.addLog(new Message(u, "Added tags " + li.get(1)));
+                    if (li.get(0).size() > 0)
+                        neww.addLog(new Message(u, "Removed tags " + li.get(0)));
+                    if (li.get(1).size() > 0)
+                        neww.addLog(new Message(u, "Added tags " + li.get(1)));
                     combineChangesMessage = new FireMessage(u).withType(FireMessage.MessageType.REPORT_EDITED, neww, g);
                     break;
                 case "notes":
