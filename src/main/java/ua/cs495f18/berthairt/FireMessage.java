@@ -94,6 +94,7 @@ public class FireMessage {
                 withCardMessage("Message");
                 withExtras("message");
                 if(sender.isAdmin()){
+                    System.out.println("Message is from Admin");
                     //change the click action to student report
                     withClickAction("STUDENT_REPORT");
                     withBody("An administrator has sent you a message!");
