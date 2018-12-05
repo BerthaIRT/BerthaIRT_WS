@@ -89,20 +89,6 @@ public class AWSManager{
         return username;
     }
 
-    public static void forgotCognitoPassword(Context ctx) {
-        try {
-            idp.adminResetUserPassword(new AdminResetUserPasswordRequest()
-            .withUserPoolId(awsUserPool)
-            .withUsername(ctx.body()));
-        } catch (NotAuthorizedException e) {
-            idp.adminCreateUser(new AdminCreateUserRequest()
-                .withUserPoolId(awsUserPool)
-                .withUsername(ctx.body())
-                .withMessageAction(MessageActionType.RESEND));
-        }
-        ctx.result("OK");
-    }
-
     public static void deleteUser(String u){
         idp.adminDeleteUser(new AdminDeleteUserRequest().withUserPoolId(awsUserPool).withUsername(u));
     }

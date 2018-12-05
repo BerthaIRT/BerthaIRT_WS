@@ -49,7 +49,7 @@ public class AuthManager extends WSMain{
     }
 
     public static void storeSecureCookies(Context ctx){
-        String[] exceptions = new String[]{"group/info", "/group/join", "/group/create"};
+        String[] exceptions = new String[]{"group/info", "/group/join", "/group/create", "/forgotpassword"};
         for(String s : exceptions) if(ctx.path().endsWith(s)){
             log("Allowing auth exception", "AUTH");
             return;
