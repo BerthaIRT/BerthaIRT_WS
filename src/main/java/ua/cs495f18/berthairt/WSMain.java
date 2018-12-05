@@ -56,7 +56,7 @@ public class WSMain extends AWSManager{
         app.put("*/group/addadmin", requestIdentifier(GroupManager::addAdminToGroup));
         app.put("*/group/removeadmin", requestIdentifier(GroupManager::removeAdminFromGroup));
         app.put("*/group/togglestatus", requestIdentifier(GroupManager::toggleStatus));
-        app.put("*/group/uploademblem", requestIdentifier(UserFileManager::downloadEmblem));
+        app.put("*/group/emblem", requestIdentifier(UserFileManager::downloadEmblem));
         app.put("*/forgotpassword", AWSManager::forgotCognitoPassword);
     }
 
