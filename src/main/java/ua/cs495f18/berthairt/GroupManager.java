@@ -50,6 +50,7 @@ public class GroupManager extends WSMain{
     public static String addAdminToGroup(User u, String body){
         Group g = groupMap.get(u.getGroupID());
         g.getAdminList().add(body);
+        createNewCognitoUser(u.getGroupID(), body, true);
         db.save(g);
         return "OK";
     }
