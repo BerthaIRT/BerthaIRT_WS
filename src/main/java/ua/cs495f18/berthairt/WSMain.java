@@ -51,6 +51,7 @@ public class WSMain extends AWSManager{
         app.put("*/report/pull", requestIdentifier(ReportManager::sendSingle));
 
         app.put("*/alerts", requestIdentifier((u, b)-> gson.toJson(u.getAlerts())));
+        app.put("*/alerts/dismiss", requestIdentifier(GroupManager::dismissAlerts));
         app.put("*/group/addadmin", requestIdentifier(GroupManager::addAdminToGroup));
         app.put("*/group/removeadmin", requestIdentifier(GroupManager::removeAdminFromGroup));
         app.put("*/group/togglestatus", requestIdentifier(GroupManager::toggleStatus));
@@ -121,6 +122,10 @@ public class WSMain extends AWSManager{
         app.enableStaticFiles("/userfiles");
         app.start(port);
         addPaths(app);
+
+//        AWSManager.createNewCognitoUser(999999, "ssinischo@gmail.com", true);
+//        GroupManager.createGroupInDatabase("Test Unit", 999999);
+//        GroupManager.addAdminToGroup(999999, "ssinischo@gmail.com");
 
         app.before("/app/*", ctx->{
             log(ctx.path(), "PATH");

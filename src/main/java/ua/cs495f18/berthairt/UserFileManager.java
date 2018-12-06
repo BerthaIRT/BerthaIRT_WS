@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 
 public class UserFileManager extends WSMain {
 
@@ -23,11 +24,15 @@ public class UserFileManager extends WSMain {
         JsonObject jay = jp.parse(body).getAsJsonObject();
         Integer reportID = Integer.valueOf(jay.get("reportID").getAsString());
         Report r = reportMap.get(u.getGroupID()).get(reportID);
-        r.setMediaCount(r.getMediaCount()+1);
+        //r.setMediaCount(r.getMediaCount()+1);
         db.save(r);
         byte[] imgData = Util.fromHexString(jay.get("image").getAsString());
+        String path = resourcePath + "/media/" + u.getGroupID() + "/" + reportID + "/";
+        boolean success = (new File(path)).mkdirs();
+        if(!success)
+            System.err.println("Didn't make img dir");
         try {
-            FileOutputStream stream = new FileOutputStream(resourcePath + "/media/" + u.getGroupID() + "/" + reportID + "/" + r.getMediaCount() + ".png");
+            FileOutputStream stream = new FileOutputStream(path + r.getMediaCount() + ".png");
             stream.write(imgData);
         } catch(Exception e ){e.printStackTrace();}
         return "OK";

@@ -31,28 +31,6 @@ public class FireMessage {
         NEW_ADMIN,
     }
 
-//    {
-//        "message":{
-//            "token":"...",
-//            "notification":{
-//                "title": string,
-//                "body": string,
-//                "icon": string,
-//                "color": string,
-//                "sound": string,
-//                "tag": string,
-//                "click_action": string,
-//                "body_loc_key": string,
-//                "body_loc_args": [string],
-//                "title_loc_key": string,
-//                "title_loc_args": [string]
-//            },
-//            "data" : {
-//                "yourKey" : "yourValue"
-//            }
-//        }
-//    }
-
     public FireMessage(User u){
         recipients = new ArrayList<>();
         payload = new JsonObject();
@@ -65,7 +43,7 @@ public class FireMessage {
         withReportID(r.getReportID().toString());
         send();
 
-        recipients = new ArrayList<String>();
+        recipients = new ArrayList<>();
         withTitle("BerthaIRT");
 
         //make click action Admin by default
@@ -92,7 +70,9 @@ public class FireMessage {
                 break;
             case REPORT_MESSAGE:
                 withCardMessage("Message");
+                withExtras("message");
                 if(sender.isAdmin()){
+                    withRecipient(r.studentID);
                     //change the click action to student report
                     withClickAction("STUDENT_REPORT");
                     withBody("An administrator has sent you a message!");
@@ -107,7 +87,6 @@ public class FireMessage {
                         withBody("A report you are assigned to has a new student message");
                     }
                 }
-                //withExtras("messages");
                 break;
 
             case REPORT_EDITED:
