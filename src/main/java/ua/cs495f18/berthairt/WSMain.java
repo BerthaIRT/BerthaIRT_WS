@@ -55,7 +55,6 @@ public class WSMain extends AWSManager{
         app.put("*/group/removeadmin", requestIdentifier(GroupManager::removeAdminFromGroup));
         app.put("*/group/togglestatus", requestIdentifier(GroupManager::toggleStatus));
         app.put("*/group/changename", requestIdentifier(GroupManager::newInstitutionName));
-        app.put("*/forgotpassword", AWSManager::forgotCognitoPassword);
 
         app.put("*/group/emblem", (ctx)->{
             try {
@@ -126,6 +125,7 @@ public class WSMain extends AWSManager{
         app.before("/app/*", ctx->{
             log(ctx.path(), "PATH");
             if(ctx.path().endsWith("emblem")) return;
+            if(ctx.path().endsWith("media")) return;
             AuthManager.storeSecureCookies(ctx);
         });
 
