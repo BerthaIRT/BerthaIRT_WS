@@ -4,6 +4,7 @@ import com.amazonaws.services.cognitoidp.model.AdminDeleteUserRequest;
 import com.google.gson.JsonObject;
 import io.javalin.Context;
 
+import java.util.List;
 import java.util.Random;
 
 public class GroupManager extends WSMain{
@@ -57,9 +58,9 @@ public class GroupManager extends WSMain{
 
     public static String removeAdminFromGroup(User u, String body){
         Group g = groupMap.get(u.getGroupID());
-        g.getAdminList().remove(u.getUsername());
-        userMap.remove(u.getUsername());
-        deleteUser(u.getUsername());
+        g.getAdminList().remove(body);
+        userMap.remove(body);
+        deleteUser(body);
         db.save(g);
         return "OK";
     }
@@ -87,6 +88,12 @@ public class GroupManager extends WSMain{
         Group g = groupMap.get(u.getGroupID());
         g.setGroupName(body);
         db.save(g);
+        return body;
+    }
+
+    public static String dismissAlerts(User u, String body) {
+        u.getAlerts().remove(Integer.valueOf(body));
+        db.save(u);
         return body;
     }
 }

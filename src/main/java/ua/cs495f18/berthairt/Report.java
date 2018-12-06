@@ -23,7 +23,7 @@ public class Report {
      List<Message> messages;
      List<Message> logs;
      List<Message> notes;
-     private Integer mediaCount;
+     Integer mediaCount;
 
     public Report(){
         categories = new ArrayList<>();
