@@ -95,5 +95,5 @@ public class GroupManager extends WSMain{
         u.getAlerts().remove((int) Integer.valueOf(body));
         db.save(u);
         return body;
-    }
+    }//
 }
